@@ -3,4 +3,15 @@
 
 from __future__ import annotations
 
-# Shell fixture will be added in Task 3 when create_shell() is implemented.
+import pytest
+from IPython.core.interactiveshell import InteractiveShell
+
+from jupyqt.kernel.shell import create_shell
+
+
+@pytest.fixture
+def shell():
+    """Create a fresh InteractiveShell, cleaning up the singleton after."""
+    s = create_shell()
+    yield s
+    InteractiveShell.clear_instance()
