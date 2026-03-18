@@ -203,13 +203,24 @@ class KernelProtocol:
             },
         )
 
+    def _run_on_shell(self, func, *args):
+        """Run func on the kernel thread if available, else directly."""
+        if self._kernel_thread is not None:
+            return self._kernel_thread.run_sync(func, *args)
+        return func(*args)
+
     async def _handle_complete(self, msg: dict[str, Any]) -> dict[str, Any]:
         content = msg["content"]
         code = content["code"]
         cursor_pos = content["cursor_pos"]
-        completions = list(self._shell.Completer.completions(code, cursor_pos))
-        matches = [c.text for c in completions]
-        cursor_start = completions[0].start if completions else cursor_pos
+
+        def _do_complete():
+            completions = list(self._shell.Completer.completions(code, cursor_pos))
+            matches = [c.text for c in completions]
+            cursor_start = completions[0].start if completions else cursor_pos
+            return matches, cursor_start
+
+        matches, cursor_start = self._run_on_shell(_do_complete)
         return create_message(
             "complete_reply",
             parent=msg,
@@ -228,22 +239,26 @@ class KernelProtocol:
         cursor_pos = content["cursor_pos"]
         detail_level = content.get("detail_level", 0)
         name = code[:cursor_pos].split()[-1] if code[:cursor_pos].strip() else ""
-        try:
-            info = self._shell.object_inspect(name, detail_level=detail_level)
-            found = info.get("found", False)
-            data = {}
-            if found:
-                text_parts = []
-                if info.get("type_name"):
-                    text_parts.append(f"Type: {info['type_name']}")
-                if info.get("string_form"):
-                    text_parts.append(f"String form: {info['string_form']}")
-                if info.get("docstring"):
-                    text_parts.append(info["docstring"])
-                data["text/plain"] = "\n".join(text_parts) if text_parts else str(info)
-        except Exception:
-            found = False
-            data = {}
+
+        def _do_inspect():
+            try:
+                info = self._shell.object_inspect(name, detail_level=detail_level)
+                found = info.get("found", False)
+                data = {}
+                if found:
+                    text_parts = []
+                    if info.get("type_name"):
+                        text_parts.append(f"Type: {info['type_name']}")
+                    if info.get("string_form"):
+                        text_parts.append(f"String form: {info['string_form']}")
+                    if info.get("docstring"):
+                        text_parts.append(info["docstring"])
+                    data["text/plain"] = "\n".join(text_parts) if text_parts else str(info)
+                return found, data
+            except Exception:
+                return False, {}
+
+        found, data = self._run_on_shell(_do_inspect)
         return create_message(
             "inspect_reply",
             parent=msg,
@@ -252,7 +267,11 @@ class KernelProtocol:
 
     async def _handle_is_complete(self, msg: dict[str, Any]) -> dict[str, Any]:
         code = msg["content"]["code"]
-        result = self._shell.input_transformer_manager.check_complete(code)
+
+        def _do_check():
+            return self._shell.input_transformer_manager.check_complete(code)
+
+        result = self._run_on_shell(_do_check)
         status = result[0]
         indent = result[1] if len(result) > 1 else ""
         reply_content = {"status": status}
