@@ -49,6 +49,11 @@ class KernelProtocol:
         self._handlers = {
             "kernel_info_request": self._handle_kernel_info,
             "execute_request": self._handle_execute,
+            "complete_request": self._handle_complete,
+            "inspect_request": self._handle_inspect,
+            "is_complete_request": self._handle_is_complete,
+            "shutdown_request": self._handle_shutdown,
+            "history_request": self._handle_history,
         }
 
     @property
@@ -196,4 +201,76 @@ class KernelProtocol:
                 "execution_count": self._execution_count,
                 "user_expressions": {},
             },
+        )
+
+    async def _handle_complete(self, msg: dict[str, Any]) -> dict[str, Any]:
+        content = msg["content"]
+        code = content["code"]
+        cursor_pos = content["cursor_pos"]
+        completions = list(self._shell.Completer.completions(code, cursor_pos))
+        matches = [c.text for c in completions]
+        cursor_start = completions[0].start if completions else cursor_pos
+        return create_message(
+            "complete_reply",
+            parent=msg,
+            content={
+                "status": "ok",
+                "matches": matches,
+                "cursor_start": cursor_start,
+                "cursor_end": cursor_pos,
+                "metadata": {},
+            },
+        )
+
+    async def _handle_inspect(self, msg: dict[str, Any]) -> dict[str, Any]:
+        content = msg["content"]
+        code = content["code"]
+        cursor_pos = content["cursor_pos"]
+        detail_level = content.get("detail_level", 0)
+        name = code[:cursor_pos].split()[-1] if code[:cursor_pos].strip() else ""
+        try:
+            info = self._shell.object_inspect(name, detail_level=detail_level)
+            found = info.get("found", False)
+            data = {}
+            if found:
+                text_parts = []
+                if info.get("type_name"):
+                    text_parts.append(f"Type: {info['type_name']}")
+                if info.get("string_form"):
+                    text_parts.append(f"String form: {info['string_form']}")
+                if info.get("docstring"):
+                    text_parts.append(info["docstring"])
+                data["text/plain"] = "\n".join(text_parts) if text_parts else str(info)
+        except Exception:
+            found = False
+            data = {}
+        return create_message(
+            "inspect_reply",
+            parent=msg,
+            content={"status": "ok", "found": found, "data": data, "metadata": {}},
+        )
+
+    async def _handle_is_complete(self, msg: dict[str, Any]) -> dict[str, Any]:
+        code = msg["content"]["code"]
+        result = self._shell.input_transformer_manager.check_complete(code)
+        status = result[0]
+        indent = result[1] if len(result) > 1 else ""
+        reply_content = {"status": status}
+        if status == "incomplete":
+            reply_content["indent"] = indent or ""
+        return create_message("is_complete_reply", parent=msg, content=reply_content)
+
+    async def _handle_shutdown(self, msg: dict[str, Any]) -> dict[str, Any]:
+        restart = msg["content"].get("restart", False)
+        return create_message(
+            "shutdown_reply",
+            parent=msg,
+            content={"status": "ok", "restart": restart},
+        )
+
+    async def _handle_history(self, msg: dict[str, Any]) -> dict[str, Any]:
+        return create_message(
+            "history_reply",
+            parent=msg,
+            content={"status": "ok", "history": []},
         )
