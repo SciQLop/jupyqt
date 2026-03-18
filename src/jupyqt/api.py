@@ -31,6 +31,7 @@ class EmbeddedJupyter:
         self._launcher = None
         self._widget = None
         self._port = 0
+        self._cwd: str | None = None
         self._started = False
 
     @property
@@ -53,7 +54,9 @@ class EmbeddedJupyter:
         if not self._started:
             raise RuntimeError("Call start() before requesting widget or browser")
         from jupyqt.server.launcher import ServerLauncher  # noqa: PLC0415
-        self._launcher = ServerLauncher(self._shell, self._kernel_thread, port=self._port)
+        self._launcher = ServerLauncher(
+            self._shell, self._kernel_thread, port=self._port, cwd=self._cwd,
+        )
         self._launcher.start()
         if self._widget is not None:
             self._widget.load(self._launcher.url)
@@ -75,9 +78,10 @@ class EmbeddedJupyter:
         from PySide6.QtGui import QDesktopServices  # noqa: PLC0415
         QDesktopServices.openUrl(QUrl(self._launcher.url))
 
-    def start(self, port: int = 0) -> None:
+    def start(self, port: int = 0, cwd: str | None = None) -> None:
         """Start the kernel thread. The server starts lazily on first widget()/open_in_browser()."""
         self._port = port
+        self._cwd = cwd
         self._kernel_thread.start()
         self._started = True
 
