@@ -19,8 +19,8 @@ class EmbeddedJupyter:
 
         jupyter = EmbeddedJupyter()
         jupyter.shell.push({"my_data": data})
-        jupyter.start()
-        layout.addWidget(jupyter.widget())
+        jupyter.start()                      # starts kernel only
+        layout.addWidget(jupyter.widget())    # starts server on first call
     """
 
     def __init__(self) -> None:
@@ -30,6 +30,7 @@ class EmbeddedJupyter:
         self._invoker = MainThreadInvoker()
         self._launcher = None
         self._widget = None
+        self._port = 0
         self._started = False
 
     @property
@@ -45,8 +46,21 @@ class EmbeddedJupyter:
         """Wrap a QObject so it can be safely accessed from the kernel thread."""
         return QtProxy(obj, self._invoker)
 
+    def _ensure_server(self) -> None:
+        """Start the jupyverse server if not already running."""
+        if self._launcher is not None:
+            return
+        if not self._started:
+            raise RuntimeError("Call start() before requesting widget or browser")
+        from jupyqt.server.launcher import ServerLauncher  # noqa: PLC0415
+        self._launcher = ServerLauncher(self._shell, self._kernel_thread, port=self._port)
+        self._launcher.start()
+        if self._widget is not None:
+            self._widget.load(self._launcher.url)
+
     def widget(self) -> Any:
-        """Return the JupyterLab QWidget, creating it on first call."""
+        """Return the JupyterLab QWidget, starting the server if needed."""
+        self._ensure_server()
         if self._widget is None:
             from jupyqt.qt.widget import JupyterLabWidget  # noqa: PLC0415
             self._widget = JupyterLabWidget()
@@ -56,20 +70,16 @@ class EmbeddedJupyter:
 
     def open_in_browser(self) -> None:
         """Open the JupyterLab URL in the system default browser."""
-        if self._launcher is not None:
-            from PySide6.QtCore import QUrl  # noqa: PLC0415
-            from PySide6.QtGui import QDesktopServices  # noqa: PLC0415
-            QDesktopServices.openUrl(QUrl(self._launcher.url))
+        self._ensure_server()
+        from PySide6.QtCore import QUrl  # noqa: PLC0415
+        from PySide6.QtGui import QDesktopServices  # noqa: PLC0415
+        QDesktopServices.openUrl(QUrl(self._launcher.url))
 
     def start(self, port: int = 0) -> None:
-        """Start the kernel thread and the jupyverse server."""
+        """Start the kernel thread. The server starts lazily on first widget()/open_in_browser()."""
+        self._port = port
         self._kernel_thread.start()
-        from jupyqt.server.launcher import ServerLauncher  # noqa: PLC0415
-        self._launcher = ServerLauncher(self._shell, self._kernel_thread, port=port)
-        self._launcher.start()
         self._started = True
-        if self._widget is not None:
-            self._widget.load(self._launcher.url)
 
     def shutdown(self) -> None:
         """Stop the server and kernel thread, releasing resources."""
