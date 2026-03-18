@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import threading
 
-import pytest
 from PySide6.QtCore import QObject
 
 from jupyqt.qt.proxy import MainThreadInvoker, QtProxy
@@ -34,7 +33,7 @@ def test_proxy_calls_execute_on_main_thread(qtbot):
     def worker():
         try:
             result[0] = proxy.get_thread_name()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             error[0] = e
 
     t = threading.Thread(target=worker, name="test-worker")

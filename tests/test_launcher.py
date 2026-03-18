@@ -4,8 +4,6 @@ from __future__ import annotations
 import time
 import urllib.request
 
-import pytest
-
 from jupyqt.server.launcher import ServerLauncher
 
 
@@ -27,10 +25,10 @@ def test_server_responds_to_http(shell):
         time.sleep(3)  # Give server time to start
         req = urllib.request.Request(f"http://localhost:{launcher.port}/api/status")
         try:
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            with urllib.request.urlopen(req, timeout=5) as resp:  # noqa: S310
                 assert resp.status == 200
         except urllib.error.HTTPError as e:
             # 403 is OK — means server is running but auth is required
-            assert e.code in (200, 403)
+            assert e.code in (200, 403)  # noqa: PT017
     finally:
         launcher.stop()

@@ -23,6 +23,7 @@ def test_shell_accessible_before_start(jupyter):
 
 def test_wrap_qt(jupyter, qtbot):
     from PySide6.QtCore import QObject
+
     from jupyqt.qt.proxy import QtProxy
 
     obj = QObject()

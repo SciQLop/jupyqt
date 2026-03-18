@@ -50,10 +50,16 @@ ignore = [
     "T201",  # Print statement
 ]
 "tests/**.py" = [
+    "ANN",  # Type annotations not required in tests
+    "ARG001",  # Unused function arguments (fixtures)
     "ARG005",  # Unused lambda argument
+    "D",  # Docstrings not required in tests
     "FBT001",  # Boolean positional arg in function definition
+    "PERF203",  # try-except in loop is fine in tests
+    "PLC0415",  # Lazy imports in tests are fine
     "PLR2004",  # Magic value used in comparison
     "S101",  # Use of assert detected
+    "T201",  # Print statements in tests are fine
 ]
 
 [lint.flake8-quotes]

@@ -21,17 +21,16 @@ def _make_raw(msg: dict, key: str = "0") -> list[bytes]:
     return serialize_message(msg, key)
 
 
-async def _collect_iopub(protocol: KernelProtocol, timeout: float = 5.0) -> list[dict]:
+async def _collect_iopub(protocol: KernelProtocol) -> list[dict]:
     """Collect all available iopub messages until the channel is empty."""
     collected = []
-    with anyio.fail_after(timeout):
-        while True:
-            try:
-                raw = protocol.iopub_receive.receive_nowait()
-                _, parts = feed_identities(raw)
-                collected.append(deserialize_message(parts))
-            except anyio.WouldBlock:
-                break
+    while True:
+        try:
+            raw = protocol.iopub_receive.receive_nowait()
+            _, parts = feed_identities(raw)
+            collected.append(deserialize_message(parts))
+        except anyio.WouldBlock:
+            break
     return collected
 
 

@@ -15,7 +15,7 @@ from jupyqt.kernel.messages import (
 def test_feed_identities_splits_on_delimiter():
     idents = [b"id1", b"id2"]
     parts = [b"hmac", b"header", b"parent", b"meta", b"content"]
-    raw = idents + [DELIM] + parts
+    raw = [*idents, DELIM, *parts]
     got_idents, got_parts = feed_identities(raw)
     assert got_idents == idents
     assert got_parts == parts
@@ -23,7 +23,7 @@ def test_feed_identities_splits_on_delimiter():
 
 def test_feed_identities_no_idents():
     parts = [b"hmac", b"header"]
-    raw = [DELIM] + parts
+    raw = [DELIM, *parts]
     got_idents, got_parts = feed_identities(raw)
     assert got_idents == []
     assert got_parts == parts
