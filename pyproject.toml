@@ -101,5 +101,11 @@ ci = [
     "zensical>=0.0.21",
 ]
 
+[project.entry-points."fps.modules"]
+jupyqt_kernel = "jupyqt.server.plugin:JupyQtKernelModule"
+
+[project.entry-points."jupyverse.modules"]
+jupyqt_kernel = "jupyqt.server.plugin:JupyQtKernelModule"
+
 [tool.uv]
 default-groups = ["maintain", "ci", "docs"]
