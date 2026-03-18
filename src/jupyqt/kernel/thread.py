@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import threading
-from typing import Any, Callable, TypeVar
+from typing import Any, Awaitable, Callable, TypeVar
 
 from IPython.core.interactiveshell import InteractiveShell
 
@@ -76,6 +76,12 @@ class KernelThread:
 
         self._loop.call_soon_threadsafe(_wrapper)
         return future.result(timeout=30)
+
+    def run_coroutine(self, coro: Awaitable[T]) -> T:
+        """Schedule a coroutine on the kernel thread's loop, blocking until done."""
+        if self._loop is None:
+            raise RuntimeError("KernelThread is not running")
+        return asyncio.run_coroutine_threadsafe(coro, self._loop).result()
 
     def _run(self) -> None:
         self._loop = asyncio.new_event_loop()

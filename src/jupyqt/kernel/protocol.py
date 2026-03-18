@@ -138,7 +138,21 @@ class KernelProtocol:
                     "traceback": traceback.format_exception(etype, evalue, tb),
                 }
 
-        def _execute():
+        async def _execute_async():
+            self._shell.showtraceback = _capture_traceback
+            capture = OutputCapture(
+                on_stdout=lambda text: stdout_chunks.append(text),
+                on_stderr=lambda text: stderr_chunks.append(text),
+            )
+            try:
+                with capture:
+                    return await self._shell.run_cell_async(
+                        code, store_history=not silent, silent=silent
+                    )
+            finally:
+                self._shell.showtraceback = original_showtraceback
+
+        def _execute_sync():
             self._shell.showtraceback = _capture_traceback
             capture = OutputCapture(
                 on_stdout=lambda text: stdout_chunks.append(text),
@@ -151,9 +165,9 @@ class KernelProtocol:
                 self._shell.showtraceback = original_showtraceback
 
         if self._kernel_thread is not None:
-            result = self._kernel_thread.run_sync(_execute)
+            result = self._kernel_thread.run_coroutine(_execute_async())
         else:
-            result = _execute()
+            result = _execute_sync()
 
         if stdout_chunks:
             await self._publish_stream("stdout", "".join(stdout_chunks), msg)
