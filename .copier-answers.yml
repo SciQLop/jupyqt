@@ -1,0 +1,19 @@
+# Changes here will be overwritten by Copier.
+_commit: 1.11.15
+_src_path: gh:pawamoy/copier-uv
+author_email: alexis.jeandet@member.fsf.org
+author_fullname: Alexis Jeandet
+author_username: jeandet
+copyright_date: '2026'
+copyright_holder: Alexis Jeandet
+copyright_holder_email: alexis.jeandet@member.fsf.org
+copyright_license: ISC
+project_description: Embed JupyterLab in PySide6 applications
+project_name: jupyqt
+python_package_command_line_name: jupyqt
+python_package_distribution_name: jupyqt
+python_package_import_name: jupyqt
+repository_name: jupyqt
+repository_namespace: jeandet
+repository_provider: github.com
+
