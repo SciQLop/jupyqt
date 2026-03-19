@@ -2,9 +2,9 @@
 site_name = "jupyqt"
 site_description = "Embed JupyterLab in PySide6 applications"
 site_author = "Alexis Jeandet"
-site_url = "https://jeandet.github.io/jupyqt"
-repo_url = "https://github.com/jeandet/jupyqt"
-repo_name = "jeandet/jupyqt"
+site_url = "https://SciQLop.github.io/jupyqt"
+repo_url = "https://github.com/SciQLop/jupyqt"
+repo_name = "SciQLop/jupyqt"
 copyright = "Copyright &copy; 2026 Alexis Jeandet"
 extra_css = ["css/apidocs.css"]
 extra_javascript = ["js/feedback.js"]
@@ -77,15 +77,7 @@ toggle.name = "Switch to system preference"
 # ----------------------------------------------------------------------------
 [[project.extra.social]]
 icon = "fontawesome/brands/github"
-link = "https://github.com/jeandet"
-
-[[project.extra.social]]
-icon = "fontawesome/brands/twitter"
-link = "https://twitter.com/pawamoy"
-
-[[project.extra.social]]
-icon = "fontawesome/brands/gitter"
-link = "https://gitter.im/jupyqt/community"
+link = "https://github.com/SciQLop"
 
 [[project.extra.social]]
 icon = "fontawesome/brands/python"

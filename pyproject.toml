@@ -35,12 +35,12 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://jeandet.github.io/jupyqt"
-Documentation = "https://jeandet.github.io/jupyqt"
-Changelog = "https://jeandet.github.io/jupyqt/changelog"
-Repository = "https://github.com/jeandet/jupyqt"
-Issues = "https://github.com/jeandet/jupyqt/issues"
-Discussions = "https://github.com/jeandet/jupyqt/discussions"
+Homepage = "https://SciQLop.github.io/jupyqt"
+Documentation = "https://SciQLop.github.io/jupyqt"
+Changelog = "https://SciQLop.github.io/jupyqt/changelog"
+Repository = "https://github.com/SciQLop/jupyqt"
+Issues = "https://github.com/SciQLop/jupyqt/issues"
+Discussions = "https://github.com/SciQLop/jupyqt/discussions"
 Gitter = "https://gitter.im/jupyqt/community"
 Funding = "https://github.com/sponsors/jeandet"
 

@@ -1,7 +1,7 @@
 # jupyqt
 
-[![ci](https://github.com/jeandet/jupyqt/workflows/ci/badge.svg)](https://github.com/jeandet/jupyqt/actions?query=workflow%3Aci)
-[![documentation](https://img.shields.io/badge/docs-zensical-FF9100.svg?style=flat)](https://jeandet.github.io/jupyqt/)
+[![ci](https://github.com/SciQLop/jupyqt/workflows/ci/badge.svg)](https://github.com/SciQLop/jupyqt/actions?query=workflow%3Aci)
+[![documentation](https://img.shields.io/badge/docs-zensical-FF9100.svg?style=flat)](https://SciQLop.github.io/jupyqt/)
 [![pypi version](https://img.shields.io/pypi/v/jupyqt.svg)](https://pypi.org/project/jupyqt/)
 
 Embed JupyterLab in PySide6 applications — no ipykernel, no ZMQ, no qasync.
