@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 import anyio
 from anyio.streams.stapled import StapledObjectStream
 
+from jupyqt.kernel.messages import deserialize_message, feed_identities
 from jupyqt.kernel.protocol import KernelProtocol
 
 if TYPE_CHECKING:
@@ -49,6 +50,7 @@ class JupyQtKernel:
     ) -> None:
         """Set up in-process streams and a KernelProtocol for the given shell."""
         self._shell = shell
+        self._kernel_thread = kernel_thread
         self.key = "0"
         self._protocol = KernelProtocol(shell, key=self.key, kernel_thread=kernel_thread)
         self._task_group: anyio.abc.TaskGroup | None = None
@@ -94,6 +96,8 @@ class JupyQtKernel:
             tg.start_soon(self._dispatch_channel, self._to_shell_recv, self._from_shell_send)
             tg.start_soon(self._dispatch_channel, self._to_control_recv, self._from_control_send)
             tg.start_soon(self._forward_iopub)
+            tg.start_soon(self._forward_stdin_requests)
+            tg.start_soon(self._forward_stdin_replies)
             if task_status is not _IGNORED:
                 task_status.started()
             await anyio.sleep_forever()
@@ -104,7 +108,9 @@ class JupyQtKernel:
             self._task_group.cancel_scope.cancel()
 
     async def interrupt(self) -> None:
-        """No-op interrupt handler."""
+        """Interrupt the running cell on the kernel thread."""
+        if self._kernel_thread is not None:
+            self._kernel_thread.interrupt()
 
     async def _dispatch_channel(
         self,
@@ -119,6 +125,19 @@ class JupyQtKernel:
     async def _forward_iopub(self) -> None:
         async for raw_msg in self._protocol.iopub_receive:
             await self._from_iopub_send.send(raw_msg)
+
+    async def _forward_stdin_requests(self) -> None:
+        """Forward input_request messages from protocol to the frontend."""
+        async for raw_msg in self._protocol.stdin_receive:
+            await self._from_stdin_send.send(raw_msg)
+
+    async def _forward_stdin_replies(self) -> None:
+        """Forward input_reply messages from the frontend to the protocol."""
+        async for raw_msg in self._to_stdin_recv:
+            _, parts = feed_identities(raw_msg)
+            msg = deserialize_message(parts)
+            if msg["msg_type"] == "input_reply":
+                self._protocol.supply_stdin_reply(msg["content"].get("value", ""))
 
 
 def create_jupyqt_kernel_class(
@@ -137,6 +156,7 @@ def create_jupyqt_kernel_class(
             """Initialise the jupyverse kernel with a KernelProtocol."""
             super().__init__()
             self._protocol = KernelProtocol(shell, key=self.key, kernel_thread=kernel_thread)
+            self._kernel_thread = kernel_thread
             self._tg: anyio.abc.TaskGroup | None = None
 
         async def start(self, *, task_status: TaskStatus[None] = anyio.TASK_STATUS_IGNORED) -> None:
@@ -146,6 +166,8 @@ def create_jupyqt_kernel_class(
                 tg.start_soon(self._dispatch, self._to_shell_receive_stream, self._from_shell_send_stream)
                 tg.start_soon(self._dispatch, self._to_control_receive_stream, self._from_control_send_stream)
                 tg.start_soon(self._forward_iopub)
+                tg.start_soon(self._forward_stdin_requests)
+                tg.start_soon(self._forward_stdin_replies)
                 self.started.set()
                 task_status.started()
                 await anyio.sleep_forever()
@@ -156,7 +178,9 @@ def create_jupyqt_kernel_class(
                 self._tg.cancel_scope.cancel()
 
         async def interrupt(self) -> None:
-            """No-op interrupt handler."""
+            """Interrupt the running cell on the kernel thread."""
+            if self._kernel_thread is not None:
+                self._kernel_thread.interrupt()
 
         async def _dispatch(
             self,
@@ -171,6 +195,17 @@ def create_jupyqt_kernel_class(
         async def _forward_iopub(self) -> None:
             async for raw_msg in self._protocol.iopub_receive:
                 await self._from_iopub_send_stream.send(raw_msg)
+
+        async def _forward_stdin_requests(self) -> None:
+            async for raw_msg in self._protocol.stdin_receive:
+                await self._from_stdin_send_stream.send(raw_msg)
+
+        async def _forward_stdin_replies(self) -> None:
+            async for raw_msg in self._to_stdin_receive_stream:
+                _, parts = feed_identities(raw_msg)
+                msg = deserialize_message(parts)
+                if msg["msg_type"] == "input_reply":
+                    self._protocol.supply_stdin_reply(msg["content"].get("value", ""))
 
     return _JupyQtJupyverseKernel
 

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import ctypes
 import threading
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -92,6 +93,15 @@ class KernelThread:
         if self._loop is None:
             raise RuntimeError("KernelThread is not running")
         return asyncio.run_coroutine_threadsafe(coro, self._loop).result()
+
+    def interrupt(self) -> None:
+        """Raise KeyboardInterrupt in the kernel thread to stop running code."""
+        tid = self._thread_id
+        if tid is None:
+            return
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(
+            ctypes.c_ulong(tid), ctypes.py_object(KeyboardInterrupt),
+        )
 
     def _run(self) -> None:
         self._loop = asyncio.new_event_loop()

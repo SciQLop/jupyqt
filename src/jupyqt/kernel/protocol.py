@@ -8,9 +8,11 @@ tests), execution runs directly in the current thread.
 
 from __future__ import annotations
 
+import builtins
 import math
 import sys
 import traceback
+import threading
 from typing import TYPE_CHECKING, Any
 
 import anyio
@@ -34,6 +36,14 @@ if TYPE_CHECKING:
     from jupyqt.kernel.thread import KernelThread
 
 
+def _get_version() -> str:
+    try:
+        from importlib.metadata import version  # noqa: PLC0415
+        return version("jupyqt")
+    except Exception:  # noqa: BLE001
+        return "0.0.0"
+
+
 class KernelProtocol:
     """Handles Jupyter wire protocol messages using an InteractiveShell."""
 
@@ -54,6 +64,18 @@ class KernelProtocol:
         self._iopub_send, self._iopub_recv = anyio.create_memory_object_stream[list[bytes]](
             max_buffer_size=math.inf,
         )
+        self._stdin_send: MemoryObjectSendStream[list[bytes]]
+        self._stdin_recv: MemoryObjectReceiveStream[list[bytes]]
+        self._stdin_send, self._stdin_recv = anyio.create_memory_object_stream[list[bytes]](
+            max_buffer_size=math.inf,
+        )
+        self._stdin_reply_send: MemoryObjectSendStream[str]
+        self._stdin_reply_recv: MemoryObjectReceiveStream[str]
+        self._stdin_reply_send, self._stdin_reply_recv = anyio.create_memory_object_stream[str](
+            max_buffer_size=1,
+        )
+        self._stdin_reply_event = threading.Event()
+        self._stdin_reply_value: str = ""
         set_publish_fn(self._publish_comm)
         self._handlers = {
             "kernel_info_request": self._handle_kernel_info,
@@ -73,6 +95,16 @@ class KernelProtocol:
     def iopub_receive(self) -> MemoryObjectReceiveStream[list[bytes]]:
         """Stream of serialized iopub messages produced by this protocol."""
         return self._iopub_recv
+
+    @property
+    def stdin_receive(self) -> MemoryObjectReceiveStream[list[bytes]]:
+        """Stream of serialized stdin request messages (input_request)."""
+        return self._stdin_recv
+
+    def supply_stdin_reply(self, value: str) -> None:
+        """Provide a reply to a pending input_request (called from stdin channel)."""
+        self._stdin_reply_value = value
+        self._stdin_reply_event.set()
 
     async def handle_message(self, channel: str, raw_msg: list[bytes]) -> list[bytes] | None:  # noqa: ARG002
         """Deserialize, dispatch, and serialize a Jupyter wire protocol message."""
@@ -99,6 +131,23 @@ class KernelProtocol:
             return None
         return serialize_message(reply, self._key)
 
+    def _raw_input(self, prompt: str = "", parent: dict[str, Any] | None = None) -> str:
+        """Send input_request on stdin and block until reply arrives.
+
+        Called from the kernel thread (via patched builtins.input) so it must
+        use thread-safe synchronisation, not async.
+        """
+        parent = parent or {}
+        msg = create_message(
+            "input_request",
+            parent=parent,
+            content={"prompt": prompt, "password": False},
+        )
+        self._stdin_reply_event.clear()
+        self._stdin_send.send_nowait(serialize_message(msg, self._key))
+        self._stdin_reply_event.wait()
+        return self._stdin_reply_value
+
     async def _publish_status(self, status: str, parent: dict[str, Any]) -> None:
         msg = create_message("status", parent=parent, content={"execution_state": status})
         await self._iopub_send.send(serialize_message(msg, self._key))
@@ -115,7 +164,7 @@ class KernelProtocol:
                 "status": "ok",
                 "protocol_version": "5.4",
                 "implementation": "jupyqt",
-                "implementation_version": "0.1.0",
+                "implementation_version": _get_version(),
                 "language_info": {
                     "name": "python",
                     "version": sys.version.split()[0],
@@ -142,6 +191,7 @@ class KernelProtocol:
         content = msg["content"]
         code = content["code"]
         silent = content.get("silent", False)
+        allow_stdin = content.get("allow_stdin", False)
 
         if not silent:
             self._execution_count += 1
@@ -162,8 +212,14 @@ class KernelProtocol:
                     "traceback": traceback.format_exception(etype, evalue, tb),
                 }
 
+        def _patched_input(prompt: str = "") -> str:
+            return self._raw_input(prompt, parent=msg)
+
         async def _execute_async() -> Any:
             self._shell.showtraceback = _capture_traceback
+            original_input = builtins.input
+            if allow_stdin:
+                builtins.input = _patched_input
             capture = OutputCapture(
                 on_stdout=stdout_chunks.append,
                 on_stderr=stderr_chunks.append,
@@ -175,9 +231,13 @@ class KernelProtocol:
                     )
             finally:
                 self._shell.showtraceback = original_showtraceback
+                builtins.input = original_input
 
         def _execute_sync() -> Any:
             self._shell.showtraceback = _capture_traceback
+            original_input = builtins.input
+            if allow_stdin:
+                builtins.input = _patched_input
             capture = OutputCapture(
                 on_stdout=stdout_chunks.append,
                 on_stderr=stderr_chunks.append,
@@ -187,9 +247,12 @@ class KernelProtocol:
                     return self._shell.run_cell(code, store_history=not silent, silent=silent)
             finally:
                 self._shell.showtraceback = original_showtraceback
+                builtins.input = original_input
 
         if self._kernel_thread is not None:
-            result = self._kernel_thread.run_coroutine(_execute_async())
+            result = await anyio.to_thread.run_sync(
+                lambda: self._kernel_thread.run_coroutine(_execute_async()),
+            )
         else:
             result = _execute_sync()
 
@@ -255,10 +318,12 @@ class KernelProtocol:
             },
         )
 
-    def _run_on_shell(self, func: Callable[..., Any], *args: Any) -> Any:
+    async def _run_on_shell(self, func: Callable[..., Any], *args: Any) -> Any:
         """Run func on the kernel thread if available, else directly."""
         if self._kernel_thread is not None:
-            return self._kernel_thread.run_sync(func, *args)
+            return await anyio.to_thread.run_sync(
+                lambda: self._kernel_thread.run_sync(func, *args),
+            )
         return func(*args)
 
     async def _handle_complete(self, msg: dict[str, Any]) -> dict[str, Any]:
@@ -273,7 +338,7 @@ class KernelProtocol:
             cursor_start = completions[0].start if completions else cursor_pos
             return matches, cursor_start
 
-        matches, cursor_start = self._run_on_shell(_do_complete)
+        matches, cursor_start = await self._run_on_shell(_do_complete)
         return create_message(
             "complete_reply",
             parent=msg,
@@ -313,7 +378,7 @@ class KernelProtocol:
             else:
                 return found, data
 
-        found, data = self._run_on_shell(_do_inspect)
+        found, data = await self._run_on_shell(_do_inspect)
         return create_message(
             "inspect_reply",
             parent=msg,
@@ -326,7 +391,7 @@ class KernelProtocol:
         def _do_check() -> tuple[str, str]:
             return self._shell.input_transformer_manager.check_complete(code)
 
-        result = self._run_on_shell(_do_check)
+        result = await self._run_on_shell(_do_check)
         status = result[0]
         indent = result[1] if len(result) > 1 else ""
         reply_content = {"status": status}
@@ -344,17 +409,17 @@ class KernelProtocol:
 
     async def _handle_comm_open(self, msg: dict[str, Any]) -> None:
         set_current_parent(msg)
-        self._run_on_shell(self._comm_manager.handle_comm_open, msg)
+        await self._run_on_shell(self._comm_manager.handle_comm_open, msg)
         return None
 
     async def _handle_comm_msg(self, msg: dict[str, Any]) -> None:
         set_current_parent(msg)
-        self._run_on_shell(self._comm_manager.handle_comm_msg, msg)
+        await self._run_on_shell(self._comm_manager.handle_comm_msg, msg)
         return None
 
     async def _handle_comm_close(self, msg: dict[str, Any]) -> None:
         set_current_parent(msg)
-        self._run_on_shell(self._comm_manager.handle_comm_close, msg)
+        await self._run_on_shell(self._comm_manager.handle_comm_close, msg)
         return None
 
     async def _handle_shutdown(self, msg: dict[str, Any]) -> dict[str, Any]:
