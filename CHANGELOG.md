@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.2.0](https://github.com/SciQLop/jupyqt/releases/tag/0.2.0) - 2026-03-19
+
+### Added
+
+- `cwd` parameter on `EmbeddedJupyter` to set the JupyterLab file browser root directory
+- Lazy server start — `start()` only starts the kernel thread; the jupyverse server launches on first `widget()` or `open_in_browser()` call
+
+### Fixed
+
+- All ruff lint errors resolved across source and test files
+- Release workflow only triggers on tag pushes (no more spurious failures)
+- Documentation deployment added to release workflow
+
 ## [0.1.0](https://github.com/SciQLop/jupyqt/releases/tag/0.1.0) - 2026-03-18
 
 ### Added
