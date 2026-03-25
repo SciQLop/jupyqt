@@ -53,7 +53,7 @@ class JupyQtKernel:
         self._kernel_thread = kernel_thread
         self.key = "0"
         self._protocol = KernelProtocol(shell, key=self.key, kernel_thread=kernel_thread)
-        self._task_group: anyio.abc.TaskGroup | None = None
+        self._task_group: anyio.abc.TaskGroup | None = None  # ty: ignore[unresolved-attribute]
 
         self._to_shell_send, self._to_shell_recv = anyio.create_memory_object_stream[list[bytes]]()
         self._from_shell_send, self._from_shell_recv = anyio.create_memory_object_stream[list[bytes]]()
@@ -157,7 +157,7 @@ def create_jupyqt_kernel_class(
             super().__init__()
             self._protocol = KernelProtocol(shell, key=self.key, kernel_thread=kernel_thread)
             self._kernel_thread = kernel_thread
-            self._tg: anyio.abc.TaskGroup | None = None
+            self._tg: anyio.abc.TaskGroup | None = None  # ty: ignore[unresolved-attribute]
 
         async def start(self, *, task_status: TaskStatus[None] = anyio.TASK_STATUS_IGNORED) -> None:
             """Start channel dispatch loops and signal task_status when ready."""
@@ -216,7 +216,7 @@ def create_kernel_factory(
 ) -> Any:
     """Create a KernelFactory for registering with jupyverse."""
     kernel_class = create_jupyqt_kernel_class(shell, kernel_thread)
-    return KernelFactory(kernel_class)
+    return KernelFactory(kernel_class)  # ty: ignore[invalid-argument-type]
 
 
 if HAS_JUPYVERSE:
@@ -248,6 +248,6 @@ if HAS_JUPYVERSE:
             if self._shell is None:
                 raise RuntimeError("JupyQtKernelModule.set_shell() must be called before jupyverse starts")
             kernel_class = create_jupyqt_kernel_class(self._shell, self._kernel_thread)
-            self.put(DefaultKernelFactory(kernel_class))
+            self.put(DefaultKernelFactory(kernel_class))  # ty: ignore[invalid-argument-type]
 else:
-    JupyQtKernelModule = None  # type: ignore[assignment,misc]
+    JupyQtKernelModule = None

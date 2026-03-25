@@ -15,11 +15,12 @@ Or from Python::
 
 from __future__ import annotations
 
+import contextlib
 from typing import Any
 
-from matplotlib._pylab_helpers import Gcf
-from matplotlib.backend_bases import FigureManagerBase, _Backend
-from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib._pylab_helpers import Gcf  # ty: ignore[unresolved-import]
+from matplotlib.backend_bases import FigureManagerBase, _Backend  # ty: ignore[unresolved-import]
+from matplotlib.backends.backend_agg import FigureCanvasAgg  # ty: ignore[unresolved-import]
 
 
 class FigureCanvasJupyQT(FigureCanvasAgg):
@@ -41,6 +42,7 @@ class FigureManagerJupyQT(FigureManagerBase):
     """Figure manager that creates Qt windows on demand via show()."""
 
     def __init__(self, canvas: FigureCanvasAgg, num: int | str) -> None:
+        """Initialise with an Agg canvas and figure number."""
         super().__init__(canvas, num)
         self._window: Any = None
         self._qt_canvas: Any = None
@@ -53,7 +55,7 @@ class FigureManagerJupyQT(FigureManagerBase):
         manager_num = self.num
 
         def _show() -> None:
-            from matplotlib.backends.backend_qtagg import (  # noqa: PLC0415
+            from matplotlib.backends.backend_qtagg import (  # noqa: PLC0415  # ty: ignore[unresolved-import]
                 FigureCanvasQTAgg,
                 NavigationToolbar2QT,
             )
@@ -101,10 +103,8 @@ class FigureManagerJupyQT(FigureManagerBase):
     def destroy(self) -> None:
         """Close the Qt window if it exists."""
         if self._window is not None and _invoker is not None:
-            try:
+            with contextlib.suppress(RuntimeError):
                 _invoker(self._window.close)
-            except RuntimeError:
-                pass
             self._window = None
             self._qt_canvas = None
         super().destroy()

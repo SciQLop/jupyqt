@@ -59,6 +59,7 @@ ignore = [
     "PLC0415",  # Lazy imports in tests are fine
     "PLR2004",  # Magic value used in comparison
     "S101",  # Use of assert detected
+    "S310",  # Audit URL open for permitted schemes
     "T201",  # Print statements in tests are fine
 ]
 

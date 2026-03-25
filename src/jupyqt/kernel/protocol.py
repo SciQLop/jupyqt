@@ -11,20 +11,20 @@ from __future__ import annotations
 import builtins
 import math
 import sys
-import traceback
 import threading
+import traceback
 from typing import TYPE_CHECKING, Any
 
 import anyio
 from IPython.core.completer import provisionalcompleter
 
+from jupyqt.kernel.comm import CommManager, get_comm_manager, set_current_parent, set_publish_fn
 from jupyqt.kernel.messages import (
     create_message,
     deserialize_message,
     feed_identities,
     serialize_message,
 )
-from jupyqt.kernel.comm import CommManager, get_comm_manager, set_current_parent, set_publish_fn
 from jupyqt.kernel.shell import DisplayCapture, OutputCapture, encode_display_data
 
 if TYPE_CHECKING:
@@ -216,10 +216,10 @@ class KernelProtocol:
             return self._raw_input(prompt, parent=msg)
 
         async def _execute_async() -> Any:
-            self._shell.showtraceback = _capture_traceback
+            self._shell.showtraceback = _capture_traceback  # ty: ignore[invalid-assignment]
             original_input = builtins.input
             if allow_stdin:
-                builtins.input = _patched_input
+                builtins.input = _patched_input  # ty: ignore[invalid-assignment]
             capture = OutputCapture(
                 on_stdout=stdout_chunks.append,
                 on_stderr=stderr_chunks.append,
@@ -234,10 +234,10 @@ class KernelProtocol:
                 builtins.input = original_input
 
         def _execute_sync() -> Any:
-            self._shell.showtraceback = _capture_traceback
+            self._shell.showtraceback = _capture_traceback  # ty: ignore[invalid-assignment]
             original_input = builtins.input
             if allow_stdin:
-                builtins.input = _patched_input
+                builtins.input = _patched_input  # ty: ignore[invalid-assignment]
             capture = OutputCapture(
                 on_stdout=stdout_chunks.append,
                 on_stderr=stderr_chunks.append,
@@ -250,8 +250,8 @@ class KernelProtocol:
                 builtins.input = original_input
 
         if self._kernel_thread is not None:
-            result = await anyio.to_thread.run_sync(
-                lambda: self._kernel_thread.run_coroutine(_execute_async()),
+            result = await anyio.to_thread.run_sync(  # ty: ignore[unresolved-attribute]
+                lambda: self._kernel_thread.run_coroutine(_execute_async()),  # ty: ignore[unresolved-attribute]
             )
         else:
             result = _execute_sync()
@@ -274,7 +274,7 @@ class KernelProtocol:
             await self._iopub_send.send(serialize_message(display_msg, self._key))
 
         if result.result is not None and not silent:
-            format_dict, md_dict = self._shell.display_formatter.format(result.result)
+            format_dict, md_dict = self._shell.display_formatter.format(result.result)  # ty: ignore[unresolved-attribute]
             exec_result_msg = create_message(
                 "execute_result",
                 parent=msg,
@@ -321,8 +321,8 @@ class KernelProtocol:
     async def _run_on_shell(self, func: Callable[..., Any], *args: Any) -> Any:
         """Run func on the kernel thread if available, else directly."""
         if self._kernel_thread is not None:
-            return await anyio.to_thread.run_sync(
-                lambda: self._kernel_thread.run_sync(func, *args),
+            return await anyio.to_thread.run_sync(  # ty: ignore[unresolved-attribute]
+                lambda: self._kernel_thread.run_sync(func, *args),  # ty: ignore[unresolved-attribute]
             )
         return func(*args)
 
@@ -410,17 +410,14 @@ class KernelProtocol:
     async def _handle_comm_open(self, msg: dict[str, Any]) -> None:
         set_current_parent(msg)
         await self._run_on_shell(self._comm_manager.handle_comm_open, msg)
-        return None
 
     async def _handle_comm_msg(self, msg: dict[str, Any]) -> None:
         set_current_parent(msg)
         await self._run_on_shell(self._comm_manager.handle_comm_msg, msg)
-        return None
 
     async def _handle_comm_close(self, msg: dict[str, Any]) -> None:
         set_current_parent(msg)
         await self._run_on_shell(self._comm_manager.handle_comm_close, msg)
-        return None
 
     async def _handle_shutdown(self, msg: dict[str, Any]) -> dict[str, Any]:
         restart = msg["content"].get("restart", False)

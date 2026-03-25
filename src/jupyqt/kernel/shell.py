@@ -12,11 +12,13 @@ from IPython.core.interactiveshell import InteractiveShell
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from typing_extensions import Self
+
 
 class _JupyQTShell(InteractiveShell):
     """InteractiveShell subclass with enable_gui no-op (Qt loop already runs)."""
 
-    def enable_gui(self, gui: str | None = None) -> None:  # noqa: ARG002
+    def enable_gui(self, gui: str | None = None) -> None:
         pass
 
 
@@ -36,13 +38,14 @@ def _activate_matplotlib_inline(shell: InteractiveShell) -> None:
     stops the hook from closing figures and rendering them inline.
     """
     try:
-        import matplotlib
-        matplotlib.use("module://matplotlib_inline.backend_inline")
-        from matplotlib_inline.backend_inline import configure_inline_support, flush_figures
+        import matplotlib as mpl  # noqa: PLC0415  # ty: ignore[unresolved-import]
+
+        mpl.use("module://matplotlib_inline.backend_inline")
+        from matplotlib_inline.backend_inline import configure_inline_support, flush_figures  # noqa: PLC0415
         configure_inline_support(shell, backend="inline")
 
         def _flush_if_inline() -> None:
-            if "inline" in matplotlib.get_backend().lower():
+            if "inline" in mpl.get_backend().lower():
                 flush_figures()
 
         shell.events.unregister("post_execute", flush_figures)
@@ -63,6 +66,7 @@ class DisplayCapture:
     """Context manager intercepting shell.display_pub.publish calls."""
 
     def __init__(self, shell: InteractiveShell) -> None:
+        """Attach to the given shell's display publisher."""
         self._shell = shell
         self._original_publish: Any = None
         self.outputs: list[dict[str, Any]] = []
@@ -82,7 +86,7 @@ class DisplayCapture:
             "transient": transient or {},
         })
 
-    def __enter__(self) -> DisplayCapture:
+    def __enter__(self) -> Self:
         self._original_publish = self._shell.display_pub.publish
         self._shell.display_pub.publish = self._capture
         return self
@@ -106,9 +110,9 @@ class OutputCapture:
         self._orig_stdout: io.TextIOBase | None = None
         self._orig_stderr: io.TextIOBase | None = None
 
-    def __enter__(self) -> OutputCapture:  # noqa: PYI034
-        self._orig_stdout = sys.stdout
-        self._orig_stderr = sys.stderr
+    def __enter__(self) -> Self:
+        self._orig_stdout = sys.stdout  # ty: ignore[invalid-assignment]
+        self._orig_stderr = sys.stderr  # ty: ignore[invalid-assignment]
         if self._on_stdout:
             sys.stdout = _CallbackWriter(self._on_stdout)
         if self._on_stderr:

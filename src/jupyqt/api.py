@@ -87,7 +87,7 @@ class EmbeddedJupyter:
         self._ensure_server()
         from PySide6.QtCore import QUrl  # noqa: PLC0415
         from PySide6.QtGui import QDesktopServices  # noqa: PLC0415
-        QDesktopServices.openUrl(QUrl(self._launcher.url))
+        QDesktopServices.openUrl(QUrl(self._launcher.url))  # ty: ignore[unresolved-attribute]
 
     def start(self, port: int = 0, cwd: str | None = None) -> None:
         """Start the kernel thread. The server starts lazily on first widget()/open_in_browser()."""
