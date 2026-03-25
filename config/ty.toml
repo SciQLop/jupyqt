@@ -1,6 +1,11 @@
 [src]
 exclude = ["tests/fixtures"]
 
+[rules]
+# ty: ignore comments may be version-specific (e.g. optional imports
+# only reachable on older Pythons), so unused ignores are expected.
+unused-ignore-comment = "ignore"
+
 [terminal]
 error-on-warning = true
 output-format = "concise"

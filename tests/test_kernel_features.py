@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import sys
 import threading
 
@@ -142,8 +143,9 @@ def test_keyboard_interrupt_error(protocol):
 
 def test_kernel_thread_interrupt():
     """KernelThread.interrupt() raises KeyboardInterrupt in the running code."""
-    from jupyqt.kernel.shell import create_shell
     from IPython.core.interactiveshell import InteractiveShell
+
+    from jupyqt.kernel.shell import create_shell
 
     shell = create_shell()
     kt = KernelThread(shell)
@@ -153,10 +155,8 @@ def test_kernel_thread_interrupt():
         result = [None]
 
         def _run_long():
-            try:
+            with contextlib.suppress(KeyboardInterrupt):
                 shell.run_cell("import time\nfor i in range(1000): time.sleep(0.01)")
-            except KeyboardInterrupt:
-                pass
             result[0] = "interrupted"
 
         t = threading.Thread(target=lambda: kt.run_sync(_run_long))

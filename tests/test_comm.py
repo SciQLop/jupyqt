@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import anyio
+import pytest
 
-from jupyqt.kernel.comm import CommManager, Comm, get_comm_manager, set_publish_fn, set_current_parent
+from jupyqt.kernel.comm import Comm, CommManager, get_comm_manager, set_current_parent
 from jupyqt.kernel.messages import (
     create_message,
     deserialize_message,
@@ -12,8 +13,6 @@ from jupyqt.kernel.messages import (
     serialize_message,
 )
 from jupyqt.kernel.protocol import KernelProtocol
-
-import pytest
 
 
 @pytest.fixture

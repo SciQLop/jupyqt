@@ -92,7 +92,7 @@ class KernelThread:
         """Schedule a coroutine on the kernel thread's loop, blocking until done."""
         if self._loop is None:
             raise RuntimeError("KernelThread is not running")
-        return asyncio.run_coroutine_threadsafe(coro, self._loop).result()
+        return asyncio.run_coroutine_threadsafe(coro, self._loop).result()  # ty: ignore[invalid-argument-type]
 
     def interrupt(self) -> None:
         """Raise KeyboardInterrupt in the kernel thread to stop running code."""

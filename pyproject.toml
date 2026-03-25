@@ -26,12 +26,13 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "ipython>=8.0",
+    "ipython>=8.14; python_version<'3.14'",
+    "ipython>=9.2; python_version>='3.14'",
     "anyio>=4.0",
     "jupyverse[jupyterlab]>=0.14",
     "fps-kernels>=0.11",
     "fps-noauth>=0.10",
-    "PySide6>=6.5",
+    "PySide6>=6.8",
 ]
 
 [project.urls]

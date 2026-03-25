@@ -43,6 +43,7 @@ class Comm:
         target_module: str | None = None,
         **_kwargs: Any,
     ) -> None:
+        """Initialise a Comm with target name, optional ID and module."""
         self.comm_id = comm_id or str(uuid.uuid4())
         self.target_name = target_name
         self.target_module = target_module
@@ -53,8 +54,8 @@ class Comm:
     def open(
         self,
         data: dict[str, Any] | None = None,
-        metadata: dict[str, Any] | None = None,
-        buffers: list[bytes] | None = None,
+        metadata: dict[str, Any] | None = None,  # noqa: ARG002
+        buffers: list[bytes] | None = None,  # noqa: ARG002
     ) -> None:
         """Open the comm, publishing comm_open on iopub."""
         get_comm_manager().register_comm(self)
@@ -69,8 +70,8 @@ class Comm:
     def send(
         self,
         data: dict[str, Any] | None = None,
-        metadata: dict[str, Any] | None = None,
-        buffers: list[bytes] | None = None,
+        metadata: dict[str, Any] | None = None,  # noqa: ARG002
+        buffers: list[bytes] | None = None,  # noqa: ARG002
     ) -> None:
         """Send a message on this comm."""
         self._publish_msg("comm_msg", data=data)
@@ -78,8 +79,8 @@ class Comm:
     def close(
         self,
         data: dict[str, Any] | None = None,
-        metadata: dict[str, Any] | None = None,
-        buffers: list[bytes] | None = None,
+        metadata: dict[str, Any] | None = None,  # noqa: ARG002
+        buffers: list[bytes] | None = None,  # noqa: ARG002
     ) -> None:
         """Close the comm."""
         self._publish_msg("comm_close", data=data)
@@ -107,10 +108,11 @@ class Comm:
     def _publish_msg(self, msg_type: str, data: Any = None, **keys: Any) -> None:
         if _publish_fn is None:
             return
-        content: dict[str, Any] = {"comm_id": self.comm_id, "data": data or {}}
-        for k, v in keys.items():
-            if v is not None:
-                content[k] = v
+        content: dict[str, Any] = {
+            "comm_id": self.comm_id,
+            "data": data or {},
+            **{k: v for k, v in keys.items() if v is not None},
+        }
         _publish_fn(msg_type, content, _current_parent)
 
 
@@ -118,22 +120,28 @@ class CommManager:
     """Tracks open comms and dispatches incoming messages."""
 
     def __init__(self) -> None:
+        """Initialise empty comm and target registries."""
         self._comms: dict[str, Comm] = {}
         self._targets: dict[str, Callable] = {}
 
     def register_target(self, target_name: str, handler: Callable) -> None:
+        """Register a handler for the given target name."""
         self._targets[target_name] = handler
 
     def unregister_target(self, target_name: str) -> None:
+        """Remove the handler for the given target name."""
         self._targets.pop(target_name, None)
 
     def register_comm(self, comm: Comm) -> None:
+        """Track an open comm by its ID."""
         self._comms[comm.comm_id] = comm
 
     def unregister_comm(self, comm_id: str) -> None:
+        """Remove a comm from the registry."""
         self._comms.pop(comm_id, None)
 
     def get_comm(self, comm_id: str) -> Comm | None:
+        """Return the comm for the given ID, or None."""
         return self._comms.get(comm_id)
 
     def new_comm(
@@ -205,7 +213,7 @@ def create_comm(**kwargs: Any) -> Comm:
 def install() -> None:
     """Monkey-patch the ``comm`` package to use jupyqt's implementation."""
     try:
-        import comm  # noqa: PLC0415
+        import comm  # noqa: PLC0415  # ty: ignore[unresolved-import]
 
         comm.create_comm = create_comm
         comm.get_comm_manager = get_comm_manager
