@@ -4,9 +4,14 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
+import logging
+import os
 import secrets
 import socket
+import sys
 import threading
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -19,6 +24,36 @@ def _find_free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("", 0))
         return s.getsockname()[1]
+
+
+def _ensure_kernelspec() -> None:
+    """Write a minimal python3 kernel spec if one doesn't already exist.
+
+    jupyqt doesn't use ipykernel, but JupyterLab's frontend needs a
+    kernel spec to be discoverable via /api/kernelspecs.
+    """
+    kernels_dir = Path(sys.prefix) / "share" / "jupyter" / "kernels" / "python3"
+    kernel_json = kernels_dir / "kernel.json"
+    if kernel_json.exists():
+        return
+    spec = {
+        "argv": [sys.executable, "-m", "jupyqt", "-f", "{connection_file}"],
+        "display_name": "Python 3 (jupyqt)",
+        "language": "python",
+    }
+    spec_text = json.dumps(spec, indent=1) + "\n"
+    try:
+        kernels_dir.mkdir(parents=True, exist_ok=True)
+        with open(kernel_json, "x", encoding="utf-8") as f:  # noqa: PTH123
+            f.write(spec_text)
+    except FileExistsError:
+        pass
+    except OSError:
+        logging.getLogger(__name__).warning(
+            "Could not write kernelspec to %s — kernelspecs may be unavailable",
+            kernel_json,
+            exc_info=True,
+        )
 
 
 def _build_config(port: int) -> dict[str, Any]:
@@ -67,6 +102,7 @@ class ServerLauncher:
         self._root_module: Any = None
         self._loop: asyncio.AbstractEventLoop | None = None
         self._started = threading.Event()
+        self._error: BaseException | None = None
 
     @property
     def port(self) -> int:
@@ -87,7 +123,9 @@ class ServerLauncher:
         """Launch the server thread and block until the server is ready."""
         self._thread = threading.Thread(target=self._run, daemon=True, name="jupyqt-server")
         self._thread.start()
-        self._started.wait(timeout=30)
+        self._started.wait(timeout=60)
+        if self._error is not None:
+            raise RuntimeError("Server thread failed to start") from self._error
 
     def stop(self) -> None:
         """Signal the server to stop and join the server thread."""
@@ -100,28 +138,33 @@ class ServerLauncher:
 
     def _run(self) -> None:
         """Start jupyverse via fps. Runs in the server thread."""
-        if self._cwd is not None:
-            import os  # noqa: PLC0415
-            os.chdir(self._cwd)
-        from jupyqt.server.plugin import JupyQtKernelModule  # noqa: PLC0415
+        try:
+            if self._cwd is not None:
+                os.chdir(self._cwd)
+            _ensure_kernelspec()
 
-        JupyQtKernelModule.set_shell(self._shell, self._kernel_thread)
+            from jupyqt.server.plugin import JupyQtKernelModule  # noqa: PLC0415
 
-        import fps  # noqa: PLC0415
+            JupyQtKernelModule.set_shell(self._shell, self._kernel_thread)  # ty: ignore[unresolved-attribute]
 
-        config = _build_config(self._port)
-        self._root_module = fps.get_root_module(config)
-        # Increase timeouts — jupyverse has many modules to prepare
-        self._root_module._prepare_timeout = 30
-        self._root_module._start_timeout = 30
+            import fps  # noqa: PLC0415
 
-        # Run the module, signalling _started once the event loop is up
-        import anyio  # noqa: PLC0415
+            config = _build_config(self._port)
+            self._root_module = fps.get_root_module(config)
+            # Increase timeouts — jupyverse has many modules to prepare
+            self._root_module._prepare_timeout = 60
+            self._root_module._start_timeout = 60
 
-        async def _main() -> None:
-            self._loop = asyncio.get_running_loop()
-            async with self._root_module:
-                self._started.set()
-                await self._root_module._exit.wait()
+            # Run the module, signalling _started once the event loop is up
+            import anyio  # noqa: PLC0415
 
-        anyio.run(_main)
+            async def _main() -> None:
+                self._loop = asyncio.get_running_loop()
+                async with self._root_module:
+                    self._started.set()
+                    await self._root_module._exit.wait()
+
+            anyio.run(_main)
+        except BaseException as exc:  # noqa: BLE001
+            self._error = exc
+            self._started.set()
