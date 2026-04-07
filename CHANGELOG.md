@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.5.0](https://github.com/SciQLop/jupyqt/releases/tag/0.5.0) - 2026-04-08
+
+### Added
+
+- File download support in the embedded JupyterLab webview (notebook export, etc.) via QWebEngineProfile download hook with a save-file dialog
+
+### Fixed
+
+- Server startup crash when `fps_nbconvert` is installed — exclude `nbconvert` module to avoid pulling in tornado/SSL
+
 ## [0.4.1](https://github.com/SciQLop/jupyqt/releases/tag/0.4.1) - 2026-04-05
 
 ### Fixed
