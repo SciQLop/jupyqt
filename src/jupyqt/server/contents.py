@@ -24,7 +24,7 @@ from __future__ import annotations
 import base64
 import json
 import shutil
-from typing import TYPE_CHECKING, Annotated, cast
+from typing import TYPE_CHECKING, cast
 
 import structlog
 from anyio import CancelScope, Path, to_thread
@@ -52,10 +52,14 @@ class _JupyQtContents(_Contents):
         files_router = APIRouter()
         read_user = auth.current_user(permissions={"contents": ["read"]})
 
+        # Use the default-value Depends form: the Annotated form is not
+        # recognized as a dependency by the jupyverse-pinned FastAPI, so the
+        # user param falls through to a required query parameter and the
+        # endpoint returns 422 before the handler is ever called.
         @files_router.get("/files/{path:path}")
         async def download_file(
             path: str,
-            user: Annotated[User, Depends(read_user)],  # noqa: ARG001
+            user: User = Depends(read_user),  # noqa: ARG001, B008, FAST002
         ) -> FileResponse:
             return await self._serve_file(path)
 

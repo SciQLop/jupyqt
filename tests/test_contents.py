@@ -165,6 +165,25 @@ def test_jupyqt_contents_serve_file_missing_returns_404(tmp_path, monkeypatch):
     assert exc_info.value.status_code == 404
 
 
+def test_jupyqt_contents_download_route_user_is_dependency_not_query():
+    """Regression: the /files/{path} route must resolve `user` as a Depends.
+
+    The Annotated[User, Depends(...)] form is silently not recognized by the
+    FastAPI pinned in jupyverse, so the user param falls through to a required
+    query parameter and the endpoint returns 422 before the handler runs.
+    Inspect the route's dependant to assert `user` is a resolved dependency,
+    never a query parameter — this catches a regression without needing httpx.
+    """
+    import inspect
+
+    src = inspect.getsource(_JupyQtContents.__init__)
+    assert "Annotated[User, Depends" not in src, (
+        "Annotated form is not recognized by the jupyverse-pinned FastAPI; "
+        "use `user: User = Depends(read_user)` instead."
+    )
+    assert "user: User = Depends(read_user)" in src
+
+
 def test_jupyqt_contents_text_path_still_works(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     payload = SaveContent(
