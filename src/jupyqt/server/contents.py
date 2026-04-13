@@ -130,6 +130,6 @@ class JupyQtContentsModule(Module):
     async def prepare(self) -> None:
         """Instantiate the plugin and publish it as the Contents provider."""
         app = await self.get(App)
-        auth = await self.get(Auth)  # ty: ignore[type-abstract]
+        auth = await self.get(Auth)
         contents = _JupyQtContents(app, auth)
         self.put(contents, Contents)

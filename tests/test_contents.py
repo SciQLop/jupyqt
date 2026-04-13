@@ -31,7 +31,7 @@ class _FakeContents(_JupyQtContents):
     def __init__(self) -> None:
         pass
 
-    def file_lock(self, path: str):
+    def file_lock(self, path: str):  # ty: ignore[invalid-method-override]
         return _noop_lock(path)
 
 
@@ -40,7 +40,6 @@ _BINARY = b"col_a,col_b\n1,2\nbinary:\x00\x01\xfe\xff"
 
 def _make_payload() -> SaveContent:
     return SaveContent(
-        name="sample.csv",
         path="sample.csv",
         type="file",
         format="base64",
@@ -57,6 +56,7 @@ def test_upstream_fps_contents_writes_base64_string_verbatim(tmp_path, monkeypat
 
     on_disk = (tmp_path / "sample.csv").read_bytes()
     assert on_disk != _BINARY
+    assert isinstance(payload.content, str)
     assert on_disk == payload.content.encode("ascii")
 
 
@@ -81,8 +81,9 @@ def test_upstream_fps_contents_rejects_copy_from(tmp_path, monkeypatch):
     from jupyverse_contents.models import CreateContent
     from pydantic import ValidationError
     monkeypatch.chdir(tmp_path)
+    body: dict = {"copy_from": "src.csv"}
     with pytest.raises(ValidationError):
-        CreateContent(copy_from="src.csv")
+        CreateContent(**body)
 
 
 def test_jupyqt_contents_copy_from_copies_file(tmp_path, monkeypatch):
@@ -167,7 +168,7 @@ def test_jupyqt_contents_serve_file_missing_returns_404(tmp_path, monkeypatch):
 def test_jupyqt_contents_text_path_still_works(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     payload = SaveContent(
-        name="hello.txt", path="hello.txt", type="file",
+        path="hello.txt", type="file",
         format="text", content="hello\nworld\n",
     )
 
