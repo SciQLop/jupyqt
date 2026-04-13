@@ -15,7 +15,6 @@ import anyio
 import pytest
 from fps_contents.routes import _Contents
 from jupyverse_contents.models import SaveContent
-
 from starlette.responses import FileResponse
 
 from jupyqt.server.contents import _JupyQtContents
@@ -29,10 +28,10 @@ async def _noop_lock(_path: str):
 class _FakeContents(_JupyQtContents):
     """_JupyQtContents with no-op file lock and no FastAPI router setup."""
 
-    def __init__(self) -> None:  # noqa: ANN204
+    def __init__(self) -> None:
         pass
 
-    def file_lock(self, path: str):  # noqa: PLR6301
+    def file_lock(self, path: str):
         return _noop_lock(path)
 
 
@@ -79,11 +78,11 @@ class _FakeRequest:
 
 def test_upstream_fps_contents_rejects_copy_from(tmp_path, monkeypatch):
     """Upstream CreateContent model has no copy_from field."""
-    from pydantic import ValidationError
     from jupyverse_contents.models import CreateContent
+    from pydantic import ValidationError
     monkeypatch.chdir(tmp_path)
     with pytest.raises(ValidationError):
-        CreateContent(**{"copy_from": "src.csv"})
+        CreateContent(copy_from="src.csv")
 
 
 def test_jupyqt_contents_copy_from_copies_file(tmp_path, monkeypatch):
@@ -137,8 +136,9 @@ def test_jupyqt_contents_copy_from_into_subdir(tmp_path, monkeypatch):
 def test_upstream_fps_contents_has_no_files_download_route():
     """fps-contents never registers GET /files/{path} — JupyterLab downloads 404."""
     import inspect
-    import fps_contents.routes as r
-    assert "/files/" not in inspect.getsource(r)
+
+    from fps_contents import routes
+    assert "/files/" not in inspect.getsource(routes)
 
 
 def test_jupyqt_contents_serves_file_with_attachment_disposition(tmp_path, monkeypatch):

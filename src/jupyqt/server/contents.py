@@ -24,7 +24,7 @@ from __future__ import annotations
 import base64
 import json
 import shutil
-from typing import cast
+from typing import TYPE_CHECKING, Annotated, cast
 
 import structlog
 from anyio import CancelScope, Path, to_thread
@@ -34,9 +34,11 @@ from fps_contents.routes import _Contents, get_available_path
 from jupyverse_api import App
 from jupyverse_auth import Auth, User
 from jupyverse_contents import Contents
-from jupyverse_contents.models import SaveContent
-from starlette.requests import Request
+from jupyverse_contents.models import Content, SaveContent
 from starlette.responses import FileResponse
+
+if TYPE_CHECKING:
+    from starlette.requests import Request
 
 logger = structlog.get_logger()
 
@@ -45,16 +47,16 @@ class _JupyQtContents(_Contents):
     """fps-contents _Contents with fixed base64 writes, copy-paste, and /files downloads."""
 
     def __init__(self, app: App, auth: Auth) -> None:
+        """Register the extra GET /files/{path} route on top of the base router."""
         super().__init__(app, auth)
         files_router = APIRouter()
+        read_user = auth.current_user(permissions={"contents": ["read"]})
 
         @files_router.get("/files/{path:path}")
         async def download_file(
             path: str,
-            user: User = Depends(  # noqa: B008
-                auth.current_user(permissions={"contents": ["read"]}),
-            ),
-        ):
+            user: Annotated[User, Depends(read_user)],  # noqa: ARG001
+        ) -> FileResponse:
             return await self._serve_file(path)
 
         self.include_router(files_router)
@@ -71,13 +73,14 @@ class _JupyQtContents(_Contents):
         path: str | None,
         request: Request,
         user: User,
-    ):
+    ) -> Content:
+        """Intercept {'copy_from': ...} bodies and delegate to _copy_content."""
         body = await request.json()
         if "copy_from" in body:
             return await self._copy_content(path, body["copy_from"])
         return await super().create_content(path, request, user)
 
-    async def _copy_content(self, dest_dir: str | None, src: str):
+    async def _copy_content(self, dest_dir: str | None, src: str) -> Content:
         # FastAPI's {path:path} passes "/" for /api/contents/ and "sub" for
         # /api/contents/sub. Strip the leading slash so we stay relative to cwd.
         rel_dir = (dest_dir or "").lstrip("/")
@@ -87,21 +90,22 @@ class _JupyQtContents(_Contents):
             dest_parent / src_path.name, sep="-Copy",
         )
         await to_thread.run_sync(shutil.copyfile, str(src_path), str(target))
-        return await self.read_content(target, False)
+        return await self.read_content(target, get_content=False)
 
     async def write_content(self, content: SaveContent | dict) -> None:
+        """Write content to disk, decoding base64 payloads instead of writing them verbatim."""
         with CancelScope(shield=True):
             if not isinstance(content, SaveContent):
                 content = SaveContent(**content)
             async with self.file_lock(content.path):
                 if content.format == "base64":
-                    content.content = cast(str, content.content)
+                    content.content = cast("str", content.content)
                     await Path(content.path).write_bytes(
                         base64.b64decode(content.content),
                     )
                     return
                 if content.format == "json":
-                    dict_content = cast(dict, content.content)
+                    dict_content = cast("dict", content.content)
                     if content.type == "notebook" and (
                         "metadata" in dict_content
                         and "orig_nbformat" in dict_content["metadata"]
@@ -116,7 +120,7 @@ class _JupyQtContents(_Contents):
                     else:
                         await Path(content.path).write_text(str_content)
                     return
-                content.content = cast(str, content.content)
+                content.content = cast("str", content.content)
                 await Path(content.path).write_text(content.content)
 
 
@@ -124,6 +128,7 @@ class JupyQtContentsModule(Module):
     """Registers _JupyQtContents in place of fps-contents' default."""
 
     async def prepare(self) -> None:
+        """Instantiate the plugin and publish it as the Contents provider."""
         app = await self.get(App)
         auth = await self.get(Auth)  # ty: ignore[type-abstract]
         contents = _JupyQtContents(app, auth)

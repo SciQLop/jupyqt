@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from PySide6.QtCore import Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWebEngineCore import QWebEngineProfile
@@ -26,7 +28,7 @@ class JupyterLabWidget(QStackedWidget):
         self._web_view = QWebEngineView(self)
         self._web_view.loadFinished.connect(self._on_load_finished)
         QWebEngineProfile.defaultProfile().downloadRequested.connect(
-            self._on_download_requested
+            self._on_download_requested,
         )
         self.addWidget(self._web_view)
 
@@ -43,10 +45,10 @@ class JupyterLabWidget(QStackedWidget):
             QDesktopServices.openUrl(QUrl(self._url))
 
     @staticmethod
-    def _on_download_requested(download) -> None:
+    def _on_download_requested(download: Any) -> None:
         suggested = download.downloadDirectory() + "/" + download.downloadFileName()
         path, _ = QFileDialog.getSaveFileName(
-            None, "Save File", suggested, "All Files (*)"
+            None, "Save File", suggested, "All Files (*)",
         )
         if path:
             download.setDownloadDirectory(path.rsplit("/", 1)[0])
