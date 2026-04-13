@@ -72,11 +72,12 @@ def _ensure_kernelspec() -> None:
 _EXCLUDED_MODULES = frozenset({
     "kernel_subprocess",
     "nbconvert",
+    "contents",
 })
 
 
 def _build_config(port: int) -> dict[str, Any]:
-    """Build the fps config dict for jupyverse with our kernel module."""
+    """Build the fps config dict for jupyverse with our kernel and contents modules."""
     from importlib.metadata import entry_points  # noqa: PLC0415
 
     jupyverse_modules = {
@@ -86,6 +87,9 @@ def _build_config(port: int) -> dict[str, Any]:
     }
     jupyverse_modules["jupyqt_kernel"] = {
         "type": "jupyqt.server.plugin:JupyQtKernelModule",
+    }
+    jupyverse_modules["contents"] = {
+        "type": "jupyqt.server.contents:JupyQtContentsModule",
     }
     return {
         "jupyverse": {
