@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.5.1](https://github.com/jeandet/jupyqt/releases/tag/0.5.1) - 2026-04-13
+
+<small>[Compare with 0.5.0](https://github.com/jeandet/jupyqt/compare/0.5.0...0.5.1)</small>
+
+### Bug Fixes
+
+- patch fps-contents gaps for uploads, copy-paste, and downloads ([6a0e2ef](https://github.com/jeandet/jupyqt/commit/6a0e2ef1b39eae77512dd4c40e56ff804cfcbf77) by Alexis Jeandet). Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
 ## [0.5.0](https://github.com/SciQLop/jupyqt/releases/tag/0.5.0) - 2026-04-08
 
 ### Added
