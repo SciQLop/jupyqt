@@ -54,8 +54,8 @@ class Comm:
     def open(
         self,
         data: dict[str, Any] | None = None,
-        metadata: dict[str, Any] | None = None,  # noqa: ARG002
-        buffers: list[bytes] | None = None,  # noqa: ARG002
+        metadata: dict[str, Any] | None = None,
+        buffers: list[bytes] | None = None,
     ) -> None:
         """Open the comm, publishing comm_open on iopub."""
         get_comm_manager().register_comm(self)
@@ -63,6 +63,8 @@ class Comm:
         self._publish_msg(
             "comm_open",
             data=data,
+            metadata=metadata,
+            buffers=buffers,
             target_name=self.target_name,
             target_module=self.target_module,
         )
@@ -70,20 +72,20 @@ class Comm:
     def send(
         self,
         data: dict[str, Any] | None = None,
-        metadata: dict[str, Any] | None = None,  # noqa: ARG002
-        buffers: list[bytes] | None = None,  # noqa: ARG002
+        metadata: dict[str, Any] | None = None,
+        buffers: list[bytes] | None = None,
     ) -> None:
         """Send a message on this comm."""
-        self._publish_msg("comm_msg", data=data)
+        self._publish_msg("comm_msg", data=data, metadata=metadata, buffers=buffers)
 
     def close(
         self,
         data: dict[str, Any] | None = None,
-        metadata: dict[str, Any] | None = None,  # noqa: ARG002
-        buffers: list[bytes] | None = None,  # noqa: ARG002
+        metadata: dict[str, Any] | None = None,
+        buffers: list[bytes] | None = None,
     ) -> None:
         """Close the comm."""
-        self._publish_msg("comm_close", data=data)
+        self._publish_msg("comm_close", data=data, metadata=metadata, buffers=buffers)
         self._open = False
         get_comm_manager().unregister_comm(self.comm_id)
 
@@ -105,7 +107,14 @@ class Comm:
         for cb in self._close_callbacks:
             cb(msg)
 
-    def _publish_msg(self, msg_type: str, data: Any = None, **keys: Any) -> None:
+    def _publish_msg(
+        self,
+        msg_type: str,
+        data: Any = None,
+        metadata: dict[str, Any] | None = None,
+        buffers: list[bytes] | None = None,
+        **keys: Any,
+    ) -> None:
         if _publish_fn is None:
             return
         content: dict[str, Any] = {
@@ -113,7 +122,7 @@ class Comm:
             "data": data or {},
             **{k: v for k, v in keys.items() if v is not None},
         }
-        _publish_fn(msg_type, content, _current_parent)
+        _publish_fn(msg_type, content, _current_parent, metadata=metadata, buffers=buffers)
 
 
 class CommManager:

@@ -180,10 +180,18 @@ class KernelProtocol:
         )
 
     def _publish_comm(
-        self, msg_type: str, content: dict[str, Any], parent: dict[str, Any],
+        self,
+        msg_type: str,
+        content: dict[str, Any],
+        parent: dict[str, Any],
+        metadata: dict[str, Any] | None = None,
+        buffers: list[bytes] | None = None,
     ) -> None:
         """Publish a comm message on iopub (may be called from any thread)."""
-        msg = create_message(msg_type, parent=parent, content=content)
+        msg = create_message(
+            msg_type, parent=parent, content=content,
+            metadata=metadata, buffers=buffers,
+        )
         self._iopub_send.send_nowait(serialize_message(msg, self._key))
 
     async def _handle_execute(self, msg: dict[str, Any]) -> dict[str, Any]:
