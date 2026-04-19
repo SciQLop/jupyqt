@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.5.3](https://github.com/jeandet/jupyqt/releases/tag/0.5.3) - 2026-04-19
+
+<small>[Compare with 0.5.2](https://github.com/jeandet/jupyqt/compare/0.5.2...0.5.3)</small>
+
+### Bug Fixes
+
+- forward metadata and buffers on comm messages ([5893081](https://github.com/jeandet/jupyqt/commit/5893081e8e7ee419e4279bfc67c273f27189b924) by Alexis Jeandet). Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
+
 ## [0.5.2](https://github.com/jeandet/jupyqt/releases/tag/0.5.2) - 2026-04-13
 
 <small>[Compare with 0.5.1](https://github.com/jeandet/jupyqt/compare/0.5.1...0.5.2)</small>
