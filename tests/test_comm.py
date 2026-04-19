@@ -118,6 +118,51 @@ def test_comm_publish(protocol):
     anyio.run(main)
 
 
+def test_comm_open_forwards_metadata_and_buffers(protocol):
+    """Comm.open() publishes metadata/buffers so ipywidgets protocol version reaches the frontend.
+
+    ipywidgets sets ``metadata={'version': __protocol_version__}``; if jupyqt
+    drops it, JupyterLab's widget manager rejects models with
+    "Wrong widget protocol version: received protocol version ''".
+    """
+    async def main():
+        parent = create_message("execute_request", content={"code": ""})
+        set_current_parent(parent)
+
+        comm = Comm(target_name="jupyter.widget", comm_id="pub2")
+        comm.open(
+            data={"state": {}, "buffer_paths": []},
+            metadata={"version": "2.1.0"},
+            buffers=[b"\x00\x01"],
+        )
+
+        iopub = await _collect_iopub(protocol)
+        comm_opens = [m for m in iopub if m["msg_type"] == "comm_open"]
+        assert len(comm_opens) == 1
+        assert comm_opens[0]["metadata"] == {"version": "2.1.0"}
+        assert comm_opens[0]["buffers"] == [b"\x00\x01"]
+
+    anyio.run(main)
+
+
+def test_comm_send_forwards_metadata_and_buffers(protocol):
+    async def main():
+        parent = create_message("execute_request", content={"code": ""})
+        set_current_parent(parent)
+
+        comm = Comm(target_name="jupyter.widget", comm_id="pub3")
+        comm.open()
+        comm.send(data={"k": 1}, metadata={"m": "x"}, buffers=[b"\xff"])
+
+        iopub = await _collect_iopub(protocol)
+        comm_msgs = [m for m in iopub if m["msg_type"] == "comm_msg"]
+        assert len(comm_msgs) == 1
+        assert comm_msgs[0]["metadata"] == {"m": "x"}
+        assert comm_msgs[0]["buffers"] == [b"\xff"]
+
+    anyio.run(main)
+
+
 def test_comm_info_request_with_comms(protocol):
     """comm_info_request returns info about open comms."""
     async def main():
