@@ -214,3 +214,58 @@ def test_shutdown_request(protocol):
         assert parsed["content"]["status"] == "ok"
 
     anyio.run(main)
+
+
+def test_complete_request_survives_busy_kernel(shell):
+    """A completion request must never crash the kernel when the kernel thread
+    is busy running a long synchronous cell: it degrades to an empty reply
+    instead of raising an unhandled TimeoutError out of the dispatch loop."""
+    import time
+
+    from jupyqt.kernel.thread import KernelThread
+
+    kt = KernelThread(shell)
+    kt.start()
+    try:
+        protocol = KernelProtocol(shell, key="0", kernel_thread=kt)
+        protocol._control_timeout = 0.3
+        # Occupy the single kernel loop longer than the control timeout,
+        # mimicking a slow synchronous cell (e.g. a blocking data fetch).
+        kt.loop.call_soon_threadsafe(lambda: time.sleep(1.5))
+
+        async def main():
+            msg = create_message(
+                "complete_request", content={"code": "pri", "cursor_pos": 3},
+            )
+            reply = await protocol.handle_message("shell", _make_raw(msg))
+            _, parts = feed_identities(reply)
+            parsed = deserialize_message(parts)
+            assert parsed["msg_type"] == "complete_reply"
+            assert parsed["content"]["status"] == "ok"
+            assert parsed["content"]["matches"] == []  # graceful, not a crash
+
+        anyio.run(main)
+    finally:
+        kt.stop()
+
+
+def test_handle_message_returns_error_reply_on_handler_exception(protocol):
+    """A handler that raises must yield an error reply, never propagate out of
+    handle_message (which would tear down the jupyverse dispatch task group)."""
+    async def boom(_msg):
+        raise RuntimeError("kaboom")
+
+    protocol._handlers["execute_request"] = boom
+
+    async def main():
+        msg = create_message("execute_request", content={
+            "code": "x = 1", "silent": False, "allow_stdin": False,
+        })
+        reply = await protocol.handle_message("shell", _make_raw(msg))
+        _, parts = feed_identities(reply)
+        parsed = deserialize_message(parts)
+        assert parsed["msg_type"] == "execute_reply"
+        assert parsed["content"]["status"] == "error"
+        assert "kaboom" in parsed["content"]["evalue"]
+
+    anyio.run(main)
