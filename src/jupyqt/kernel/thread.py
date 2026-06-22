@@ -73,8 +73,14 @@ class KernelThread:
         else:
             self._loop.call_soon_threadsafe(self._shell.push, variables)
 
-    def run_sync(self, func: Callable[..., T], *args: Any) -> T:
-        """Run a synchronous callable on the kernel thread, blocking until done."""
+    def run_sync(self, func: Callable[..., T], *args: Any, timeout: float = 30.0) -> T:
+        """Run a synchronous callable on the kernel thread, blocking until done.
+
+        Raises ``concurrent.futures.TimeoutError`` if the kernel thread is busy
+        (e.g. running a long synchronous cell) and cannot run ``func`` within
+        ``timeout`` seconds. Callers that must not fail on a busy kernel — such
+        as completion/inspection on the control path — should catch it.
+        """
         if self._loop is None:
             raise RuntimeError("KernelThread is not running")
         future: concurrent.futures.Future[T] = concurrent.futures.Future()
@@ -86,7 +92,7 @@ class KernelThread:
                 future.set_exception(e)
 
         self._loop.call_soon_threadsafe(_wrapper)
-        return future.result(timeout=30)
+        return future.result(timeout=timeout)
 
     def run_coroutine(self, coro: Awaitable[T]) -> T:
         """Schedule a coroutine on the kernel thread's loop, blocking until done."""

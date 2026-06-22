@@ -9,11 +9,14 @@ tests), execution runs directly in the current thread.
 from __future__ import annotations
 
 import builtins
+import logging
 import math
 import sys
 import threading
 import traceback
 from typing import TYPE_CHECKING, Any
+
+log = logging.getLogger(__name__)
 
 import anyio
 from IPython.core.completer import provisionalcompleter
@@ -57,6 +60,11 @@ class KernelProtocol:
         self._shell = shell
         self._key = key
         self._kernel_thread = kernel_thread
+        # Control-path ops (complete/inspect/is_complete) share the single
+        # kernel thread with cell execution. If a long synchronous cell keeps
+        # it busy past this deadline, those ops give up gracefully instead of
+        # blocking forever — see _run_on_shell.
+        self._control_timeout = 30.0
         self._execution_count = 0
         self._comm_manager: CommManager = get_comm_manager()
         self._iopub_send: MemoryObjectSendStream[list[bytes]]
@@ -125,8 +133,22 @@ class KernelProtocol:
             )
             return serialize_message(reply, self._key)
         await self._publish_status("busy", msg)
-        reply = await handler(msg)
-        await self._publish_status("idle", msg)
+        try:
+            reply = await handler(msg)
+        except Exception as e:  # noqa: BLE001 — a handler fault must not crash dispatch
+            log.exception("kernel handler for %s failed", msg_type)
+            reply = create_message(
+                msg_type.replace("_request", "_reply"),
+                parent=msg,
+                content={
+                    "status": "error",
+                    "ename": type(e).__name__,
+                    "evalue": str(e),
+                    "traceback": [],
+                },
+            )
+        finally:
+            await self._publish_status("idle", msg)
         if reply is None:
             return None
         return serialize_message(reply, self._key)
@@ -326,12 +348,30 @@ class KernelProtocol:
             },
         )
 
-    async def _run_on_shell(self, func: Callable[..., Any], *args: Any) -> Any:
-        """Run func on the kernel thread if available, else directly."""
+    async def _run_on_shell(
+        self, func: Callable[..., Any], *args: Any, default: Any = None,
+    ) -> Any:
+        """Run ``func`` on the kernel thread, returning ``default`` if the kernel
+        is too busy to service it within ``self._control_timeout``.
+
+        Used by the control-path handlers (complete/inspect/is_complete), which
+        share the single kernel thread with cell execution. A long synchronous
+        cell would otherwise make ``run_sync`` time out and raise, crashing the
+        dispatch loop; instead we degrade to ``default`` (e.g. no completions).
+        """
         if self._kernel_thread is not None:
-            return await anyio.to_thread.run_sync(  # ty: ignore[unresolved-attribute]
-                lambda: self._kernel_thread.run_sync(func, *args),  # ty: ignore[unresolved-attribute]
-            )
+            try:
+                return await anyio.to_thread.run_sync(  # ty: ignore[unresolved-attribute]
+                    lambda: self._kernel_thread.run_sync(  # ty: ignore[unresolved-attribute]
+                        func, *args, timeout=self._control_timeout,
+                    ),
+                )
+            except TimeoutError:
+                log.warning(
+                    "kernel busy: '%s' skipped (kernel thread did not free within %.0fs)",
+                    getattr(func, "__name__", func), self._control_timeout,
+                )
+                return default
         return func(*args)
 
     async def _handle_complete(self, msg: dict[str, Any]) -> dict[str, Any]:
@@ -346,7 +386,9 @@ class KernelProtocol:
             cursor_start = completions[0].start if completions else cursor_pos
             return matches, cursor_start
 
-        matches, cursor_start = await self._run_on_shell(_do_complete)
+        matches, cursor_start = await self._run_on_shell(
+            _do_complete, default=([], cursor_pos),
+        )
         return create_message(
             "complete_reply",
             parent=msg,
@@ -386,7 +428,7 @@ class KernelProtocol:
             else:
                 return found, data
 
-        found, data = await self._run_on_shell(_do_inspect)
+        found, data = await self._run_on_shell(_do_inspect, default=(False, {}))
         return create_message(
             "inspect_reply",
             parent=msg,
@@ -399,7 +441,7 @@ class KernelProtocol:
         def _do_check() -> tuple[str, str]:
             return self._shell.input_transformer_manager.check_complete(code)
 
-        result = await self._run_on_shell(_do_check)
+        result = await self._run_on_shell(_do_check, default=("unknown", ""))
         status = result[0]
         indent = result[1] if len(result) > 1 else ""
         reply_content = {"status": status}
