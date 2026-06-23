@@ -50,6 +50,15 @@ class EmbeddedJupyter:
         """The underlying IPython interactive shell."""
         return self._shell
 
+    @property
+    def kernel_thread(self) -> KernelThread:
+        """The background KernelThread that owns the shell after start()."""
+        return self._kernel_thread
+
+    def interrupt(self) -> None:
+        """Raise KeyboardInterrupt in the kernel thread to stop a running cell."""
+        self._kernel_thread.interrupt()
+
     def push(self, variables: dict[str, Any]) -> None:
         """Thread-safe variable injection into the kernel namespace."""
         self._kernel_thread.push(variables)
