@@ -16,8 +16,6 @@ import threading
 import traceback
 from typing import TYPE_CHECKING, Any
 
-log = logging.getLogger(__name__)
-
 import anyio
 from IPython.core.completer import provisionalcompleter
 
@@ -29,6 +27,8 @@ from jupyqt.kernel.messages import (
     serialize_message,
 )
 from jupyqt.kernel.shell import DisplayCapture, OutputCapture, encode_display_data
+
+log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -135,7 +135,7 @@ class KernelProtocol:
         await self._publish_status("busy", msg)
         try:
             reply = await handler(msg)
-        except Exception as e:  # noqa: BLE001 — a handler fault must not crash dispatch
+        except Exception as e:  # a handler fault must not crash dispatch
             log.exception("kernel handler for %s failed", msg_type)
             reply = create_message(
                 msg_type.replace("_request", "_reply"),
@@ -260,7 +260,7 @@ class KernelProtocol:
                         code, store_history=not silent, silent=silent,
                     )
             finally:
-                self._shell.showtraceback = original_showtraceback
+                self._shell.showtraceback = original_showtraceback  # ty: ignore[invalid-assignment]
                 builtins.input = original_input
 
         def _execute_sync() -> Any:
@@ -276,7 +276,7 @@ class KernelProtocol:
                 with display_capture, capture:
                     return self._shell.run_cell(code, store_history=not silent, silent=silent)
             finally:
-                self._shell.showtraceback = original_showtraceback
+                self._shell.showtraceback = original_showtraceback  # ty: ignore[invalid-assignment]
                 builtins.input = original_input
 
         if self._kernel_thread is not None:
@@ -351,10 +351,10 @@ class KernelProtocol:
     async def _run_on_shell(
         self, func: Callable[..., Any], *args: Any, default: Any = None,
     ) -> Any:
-        """Run ``func`` on the kernel thread, returning ``default`` if the kernel
-        is too busy to service it within ``self._control_timeout``.
+        """Run ``func`` on the kernel thread, degrading to ``default`` on timeout.
 
-        Used by the control-path handlers (complete/inspect/is_complete), which
+        Returns ``default`` if the kernel is too busy to service ``func`` within
+        ``self._control_timeout``. Used by the control-path handlers (complete/inspect/is_complete), which
         share the single kernel thread with cell execution. A long synchronous
         cell would otherwise make ``run_sync`` time out and raise, crashing the
         dispatch loop; instead we degrade to ``default`` (e.g. no completions).

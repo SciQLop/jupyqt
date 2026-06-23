@@ -88,7 +88,7 @@ class DisplayCapture:
 
     def __enter__(self) -> Self:
         self._original_publish = self._shell.display_pub.publish
-        self._shell.display_pub.publish = self._capture
+        self._shell.display_pub.publish = self._capture  # ty: ignore[invalid-assignment]
         return self
 
     def __exit__(self, *exc: object) -> bool:
