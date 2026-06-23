@@ -238,7 +238,7 @@ class KernelProtocol:
                         code, store_history=not silent, silent=silent,
                     )
             finally:
-                self._shell.showtraceback = original_showtraceback
+                self._shell.showtraceback = original_showtraceback  # ty: ignore[invalid-assignment]
                 builtins.input = original_input
 
         def _execute_sync() -> Any:
@@ -254,7 +254,7 @@ class KernelProtocol:
                 with display_capture, capture:
                     return self._shell.run_cell(code, store_history=not silent, silent=silent)
             finally:
-                self._shell.showtraceback = original_showtraceback
+                self._shell.showtraceback = original_showtraceback  # ty: ignore[invalid-assignment]
                 builtins.input = original_input
 
         if self._kernel_thread is not None:
