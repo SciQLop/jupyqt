@@ -231,6 +231,7 @@ def test_complete_request_survives_busy_kernel(shell):
         protocol._control_timeout = 0.3
         # Occupy the single kernel loop longer than the control timeout,
         # mimicking a slow synchronous cell (e.g. a blocking data fetch).
+        assert kt.loop is not None
         kt.loop.call_soon_threadsafe(lambda: time.sleep(1.5))
 
         async def main():
@@ -238,6 +239,7 @@ def test_complete_request_survives_busy_kernel(shell):
                 "complete_request", content={"code": "pri", "cursor_pos": 3},
             )
             reply = await protocol.handle_message("shell", _make_raw(msg))
+            assert reply is not None
             _, parts = feed_identities(reply)
             parsed = deserialize_message(parts)
             assert parsed["msg_type"] == "complete_reply"
