@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.6.0](https://github.com/jeandet/jupyqt/releases/tag/0.6.0) - 2026-06-24
+
+<small>[Compare with 0.5.3](https://github.com/jeandet/jupyqt/compare/0.5.3...0.6.0)</small>
+
+### Features
+
+- expose EmbeddedJupyter.interrupt() and kernel_thread ([3781a73](https://github.com/jeandet/jupyqt/commit/3781a736011361bc9e53d20f7b217b5274f994d2) by Alexis Jeandet). Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
+### Bug Fixes
+
+- catch concurrent.futures.TimeoutError on Python 3.10 ([21258b8](https://github.com/jeandet/jupyqt/commit/21258b826e376e54f31ba1a5e65ded33707dabdf) by Alexis Jeandet). Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+- satisfy ruff and ty on the kernel module ([af530c0](https://github.com/jeandet/jupyqt/commit/af530c0392bac8d717b817fef8b24a0d344a18e7) by Alexis Jeandet). Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+- completion/inspect on a busy kernel must not crash the server ([aae1aaa](https://github.com/jeandet/jupyqt/commit/aae1aaa05083cc39ba8cd2beb660c5bceb59babe) by Alexis Jeandet). Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
 ## [0.5.3](https://github.com/jeandet/jupyqt/releases/tag/0.5.3) - 2026-04-19
 
 <small>[Compare with 0.5.2](https://github.com/jeandet/jupyqt/compare/0.5.2...0.5.3)</small>
