@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.0.33">
+      <meta name="generator" content="zensical-0.0.46">
     
     
       
@@ -32,7 +32,7 @@
       
         
       
-      <link rel="stylesheet" href="../assets/stylesheets/modern/main.53a7feaf.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.19d3147f.min.css">
       
         
           
@@ -58,7 +58,7 @@
     
       <link rel="stylesheet" href="../css/apidocs.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,a=__md_scope)=>JSON.parse(t.getItem(a.pathname+"."+e)),__md_set=(e,t,a=localStorage,_=__md_scope)=>{try{a.setItem(_.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
     
       
   
@@ -209,6 +209,21 @@
   
   
     
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
     
       <li class="md-tabs__item">
         <a href="./.." class="md-tabs__link">
@@ -243,6 +258,15 @@
   
   
   
+    
+      
+      
+        
+      
+        
+      
+    
+    
     
     
       <li class="md-tabs__item">
@@ -351,8 +375,7 @@
   <span class="md-ellipsis">
     
   
-    Home
-  
+  Home
 
     
   </span>
@@ -373,8 +396,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Home
-  
+  Home
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -395,8 +417,7 @@
   <span class="md-ellipsis">
     
   
-    Changelog
-  
+  Changelog
 
     
   </span>
@@ -423,8 +444,7 @@
   <span class="md-ellipsis">
     
   
-    Credits
-  
+  Credits
 
     
   </span>
@@ -451,8 +471,7 @@
   <span class="md-ellipsis">
     
   
-    License
-  
+  License
 
     
   </span>
@@ -486,8 +505,7 @@
   <span class="md-ellipsis">
     
   
-    API reference
-  
+  API reference
 
     
   </span>
@@ -535,8 +553,7 @@
   <span class="md-ellipsis">
     
   
-    Development
-  
+  Development
 
     
   </span>
@@ -551,8 +568,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Development
-  
+  Development
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -571,8 +587,7 @@
   <span class="md-ellipsis">
     
   
-    Contributing
-  
+  Contributing
 
     
   </span>
@@ -599,8 +614,7 @@
   <span class="md-ellipsis">
     
   
-    Code of Conduct
-  
+  Code of Conduct
 
     
   </span>
@@ -663,9 +677,9 @@
         <li class="md-nav__item">
   <a href="#file-map" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         File Map
-      
+      </span>
     </span>
   </a>
   
@@ -675,9 +689,9 @@
           <li class="md-nav__item">
   <a href="#source-files-to-create" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Source files to create
-      
+      </span>
     </span>
   </a>
   
@@ -686,9 +700,9 @@
           <li class="md-nav__item">
   <a href="#test-files-to-create" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Test files to create
-      
+      </span>
     </span>
   </a>
   
@@ -697,9 +711,9 @@
           <li class="md-nav__item">
   <a href="#files-to-modify" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Files to modify
-      
+      </span>
     </span>
   </a>
   
@@ -708,9 +722,9 @@
           <li class="md-nav__item">
   <a href="#files-to-delete" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Files to delete
-      
+      </span>
     </span>
   </a>
   
@@ -724,9 +738,9 @@
         <li class="md-nav__item">
   <a href="#task-1-project-setup-dependencies-and-cleanup" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Task 1: Project setup — dependencies and cleanup
-      
+      </span>
     </span>
   </a>
   
@@ -735,9 +749,9 @@
         <li class="md-nav__item">
   <a href="#task-2-message-serialization-layer" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Task 2: Message serialization layer
-      
+      </span>
     </span>
   </a>
   
@@ -746,9 +760,9 @@
         <li class="md-nav__item">
   <a href="#task-3-shell-setup-with-output-capture" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Task 3: Shell setup with output capture
-      
+      </span>
     </span>
   </a>
   
@@ -757,9 +771,9 @@
         <li class="md-nav__item">
   <a href="#task-4-kernel-thread" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Task 4: Kernel thread
-      
+      </span>
     </span>
   </a>
   
@@ -768,9 +782,9 @@
         <li class="md-nav__item">
   <a href="#task-5-wire-protocol-handler-phase-1-execute-kernel_info" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Task 5: Wire protocol handler (Phase 1 — execute + kernel_info)
-      
+      </span>
     </span>
   </a>
   
@@ -779,9 +793,9 @@
         <li class="md-nav__item">
   <a href="#task-6-wire-protocol-phase-2-complete-inspect-is_complete-shutdown" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Task 6: Wire protocol Phase 2 — complete, inspect, is_complete, shutdown
-      
+      </span>
     </span>
   </a>
   
@@ -790,9 +804,9 @@
         <li class="md-nav__item">
   <a href="#task-7-jupyverse-kernel-plugin" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Task 7: Jupyverse kernel plugin
-      
+      </span>
     </span>
   </a>
   
@@ -801,9 +815,9 @@
         <li class="md-nav__item">
   <a href="#task-8-server-launcher" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Task 8: Server launcher
-      
+      </span>
     </span>
   </a>
   
@@ -812,9 +826,9 @@
         <li class="md-nav__item">
   <a href="#task-9-qt-proxy-layer" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Task 9: Qt proxy layer
-      
+      </span>
     </span>
   </a>
   
@@ -823,9 +837,9 @@
         <li class="md-nav__item">
   <a href="#task-10-jupyterlab-widget" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Task 10: JupyterLab widget
-      
+      </span>
     </span>
   </a>
   
@@ -834,9 +848,9 @@
         <li class="md-nav__item">
   <a href="#task-11-public-api-embeddedjupyter" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Task 11: Public API — EmbeddedJupyter
-      
+      </span>
     </span>
   </a>
   
@@ -845,9 +859,9 @@
         <li class="md-nav__item">
   <a href="#task-12-fps-module-entry-point" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Task 12: FPS module entry point
-      
+      </span>
     </span>
   </a>
   
@@ -856,9 +870,9 @@
         <li class="md-nav__item">
   <a href="#task-13-end-to-end-smoke-test" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Task 13: End-to-end smoke test
-      
+      </span>
     </span>
   </a>
   
@@ -867,9 +881,9 @@
         <li class="md-nav__item">
   <a href="#implementation-notes" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Implementation Notes
-      
+      </span>
     </span>
   </a>
   
@@ -879,9 +893,9 @@
           <li class="md-nav__item">
   <a href="#task-ordering-and-dependencies" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Task ordering and dependencies
-      
+      </span>
     </span>
   </a>
   
@@ -890,9 +904,9 @@
           <li class="md-nav__item">
   <a href="#known-risks" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         Known risks
-      
+      </span>
     </span>
   </a>
   
@@ -917,8 +931,6 @@
                 
 
 
-
-  
 
 
               
@@ -3345,10 +3357,10 @@ git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </sp
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","search.highlight","toc.follow"],"search":"../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","search.highlight","toc.follow"],"search":"../assets/javascripts/workers/search.b6b7e04f.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../assets/javascripts/bundle.63456bd9.min.js"></script>
+      <script src="../assets/javascripts/bundle.ee611ef6.min.js"></script>
       
         <script src="../js/feedback.js"></script>
       
