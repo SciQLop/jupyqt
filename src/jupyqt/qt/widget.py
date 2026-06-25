@@ -6,9 +6,38 @@ from typing import Any
 
 from PySide6.QtCore import Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWebEngineCore import QWebEngineProfile
+from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QFileDialog, QLabel, QStackedWidget, QWidget
+
+
+class _PopupPage(QWebEnginePage):
+    """Transient page backing a ``window.open()`` target.
+
+    JupyterLab's *Save and Export Notebook As* opens a blank window and then
+    navigates it to the nbconvert download URL. Giving that window a real page on
+    the shared profile lets the navigation proceed, so the attachment response
+    fires ``downloadRequested`` (handled by :class:`JupyterLabWidget`). The page
+    disposes of itself once the navigation resolves.
+    """
+
+    def __init__(self, profile: QWebEngineProfile, parent: QWebEnginePage) -> None:
+        """Create a transient page that self-destructs when its load finishes."""
+        super().__init__(profile, parent)
+        self.loadFinished.connect(lambda _ok: self.deleteLater())
+
+
+class _LabPage(QWebEnginePage):
+    """Main page that grants ``window.open()`` a real target window.
+
+    The base ``QWebEnginePage.createWindow`` returns None, which makes JavaScript
+    ``window.open`` evaluate to null — JupyterLab's notebook export then silently
+    does nothing.
+    """
+
+    def createWindow(self, _type: QWebEnginePage.WebWindowType) -> QWebEnginePage:
+        """Return a transient page so ``window.open()`` navigations proceed."""
+        return _PopupPage(self.profile(), self)
 
 
 class JupyterLabWidget(QStackedWidget):
@@ -26,6 +55,7 @@ class JupyterLabWidget(QStackedWidget):
         self.addWidget(self._placeholder)
 
         self._web_view = QWebEngineView(self)
+        self._web_view.setPage(_LabPage(self._web_view))
         self._web_view.loadFinished.connect(self._on_load_finished)
         QWebEngineProfile.defaultProfile().downloadRequested.connect(
             self._on_download_requested,
