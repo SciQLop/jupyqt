@@ -69,9 +69,13 @@ def _ensure_kernelspec() -> None:
         )
 
 
+# Modules replaced by jupyqt's own implementations: the in-process kernel
+# (jupyqt_kernel) supersedes kernel_subprocess, and JupyQtContentsModule
+# supersedes contents. nbconvert is kept so JupyterLab's "Save and Export
+# Notebook As" menu can list export formats (the old tornado/SSL import
+# crash that forced its removal no longer occurs).
 _EXCLUDED_MODULES = frozenset({
     "kernel_subprocess",
-    "nbconvert",
     "contents",
 })
 
