@@ -35,7 +35,7 @@ class _LabPage(QWebEnginePage):
     does nothing.
     """
 
-    def createWindow(self, _type: QWebEnginePage.WebWindowType) -> QWebEnginePage:
+    def createWindow(self, _type: QWebEnginePage.WebWindowType) -> QWebEnginePage:  # noqa: N802
         """Return a transient page so ``window.open()`` navigations proceed."""
         return _PopupPage(self.profile(), self)
 
