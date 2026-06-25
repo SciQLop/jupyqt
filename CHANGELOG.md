@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.6.1](https://github.com/jeandet/jupyqt/releases/tag/0.6.1) - 2026-06-25
+
+<small>[Compare with 0.6.0](https://github.com/jeandet/jupyqt/compare/0.6.0...0.6.1)</small>
+
+### Bug Fixes
+
+- silence ruff N802 on the QWebEnginePage.createWindow override ([b878abc](https://github.com/jeandet/jupyqt/commit/b878abcd1e042ec1c0e7e94a3eff72bd63a8825e) by Alexis Jeandet). Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+- support window.open() so notebook export downloads work ([f3f3878](https://github.com/jeandet/jupyqt/commit/f3f38785530c7ea9e50da3cdefb62efd641fe1c7) by Alexis Jeandet). Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+- re-enable jupyverse nbconvert module so notebook export works ([9f250db](https://github.com/jeandet/jupyqt/commit/9f250db3353b2805511ccab1da92aae8f5a4f4d5) by Alexis Jeandet). Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+
 ## [0.6.0](https://github.com/jeandet/jupyqt/releases/tag/0.6.0) - 2026-06-24
 
 <small>[Compare with 0.5.3](https://github.com/jeandet/jupyqt/compare/0.5.3...0.6.0)</small>
