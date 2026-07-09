@@ -1,6 +1,6 @@
 """Jupyverse Contents plugin that fills gaps in the upstream implementation.
 
-Three upstream gaps are patched here:
+Four upstream gaps are patched here:
 
 1. `_Contents.write_content` writes the base64-encoded string to disk in the
    `format:"base64"` branch instead of decoding it first, so any binary file
@@ -15,7 +15,14 @@ Three upstream gaps are patched here:
    `Drive.getDownloadUrl` — so clicking "Download" produces a 404 and the
    QWebEngine save dialog writes an empty (or error-page) file.
 
-This module provides a subclass that fixes all three, plus a jupyverse
+4. `SaveContent` has no `chunk` field, so `_Contents.save_content` silently
+   drops it while coercing the request body. JupyterLab's file browser splits
+   any dropped file over 1MiB into a sequence of base64 PUTs tagged
+   `chunk: 1, 2, ..., -1` (last) — without chunk awareness, each PUT
+   overwrites the file instead of appending, leaving only the last chunk
+   on disk.
+
+This module provides a subclass that fixes all four, plus a jupyverse
 Module that registers it in place of the default fps-contents ContentsModule.
 """
 
@@ -39,6 +46,7 @@ from starlette.responses import FileResponse
 
 if TYPE_CHECKING:
     from starlette.requests import Request
+    from starlette.responses import Response
 
 logger = structlog.get_logger()
 
@@ -84,6 +92,21 @@ class _JupyQtContents(_Contents):
             return await self._copy_content(path, body["copy_from"])
         return await super().create_content(path, request, user)
 
+    async def save_content(
+        self,
+        path: str | None,  # noqa: ARG002
+        request: Request,
+        response: Response,  # noqa: ARG002
+        user: User,  # noqa: ARG002
+    ) -> Content:
+        """Pass the raw body to write_content so chunked uploads keep their `chunk` field."""
+        body = await request.json()
+        try:
+            await self.write_content(body)
+        except Exception as exc:
+            raise HTTPException(status_code=404, detail=f"Error saving {body.get('path')}") from exc
+        return await self.read_content(body["path"], False)
+
     async def _copy_content(self, dest_dir: str | None, src: str) -> Content:
         # FastAPI's {path:path} passes "/" for /api/contents/ and "sub" for
         # /api/contents/sub. Strip the leading slash so we stay relative to cwd.
@@ -97,16 +120,25 @@ class _JupyQtContents(_Contents):
         return await self.read_content(target, get_content=False)
 
     async def write_content(self, content: SaveContent | dict) -> None:
-        """Write content to disk, decoding base64 payloads instead of writing them verbatim."""
+        """Write content to disk, decoding base64 payloads and assembling chunked uploads.
+
+        JupyterLab tags chunked-upload PUTs with `chunk: 1, 2, ..., -1` (last);
+        the first chunk (or a non-chunked upload, where `chunk` is absent)
+        truncates the file, later chunks append.
+        """
+        chunk = content.get("chunk") if isinstance(content, dict) else None
         with CancelScope(shield=True):
             if not isinstance(content, SaveContent):
                 content = SaveContent(**content)
             async with self.file_lock(content.path):
                 if content.format == "base64":
                     content.content = cast("str", content.content)
-                    await Path(content.path).write_bytes(
-                        base64.b64decode(content.content),
-                    )
+                    data = base64.b64decode(content.content)
+                    if chunk in (None, 1):
+                        await Path(content.path).write_bytes(data)
+                    else:
+                        async with await Path(content.path).open("ab") as f:
+                            await f.write(data)
                     return
                 if content.format == "json":
                     dict_content = cast("dict", content.content)

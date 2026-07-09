@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 from contextlib import asynccontextmanager
 
 import anyio
@@ -68,12 +69,53 @@ def test_jupyqt_contents_decodes_base64_and_writes_original_bytes(tmp_path, monk
     assert (tmp_path / "sample.csv").read_bytes() == _BINARY
 
 
+def test_upstream_save_content_model_drops_chunk_field():
+    """SaveContent has no `chunk` field, so JupyterLab's chunk number never reaches write_content."""
+    parsed = SaveContent(path="x.bin", type="file", format="base64", content="AA==")
+    assert not hasattr(parsed, "chunk")
+
+
 class _FakeRequest:
     def __init__(self, body: dict) -> None:
         self._body = body
 
     async def json(self) -> dict:
         return self._body
+
+
+_CHUNK_SIZE = 1024 * 1024  # matches JupyterLab's frontend CHUNK_SIZE
+
+
+def test_jupyqt_contents_assembles_chunked_base64_upload(tmp_path, monkeypatch):
+    """Files >1MiB are dropped as a sequence of PUTs tagged chunk=1,2,...,-1 (last).
+
+    Regression test: without chunk-aware assembly, each PUT's base64 branch
+    calls write_bytes and overwrites the file, so only the final chunk survives
+    on disk instead of the full reassembled upload.
+    """
+    monkeypatch.chdir(tmp_path)
+    data = os.urandom(int(2.5 * _CHUNK_SIZE))
+    fake = _FakeContents()
+
+    offset = 0
+    chunk_number = 1
+    while offset < len(data):
+        end = offset + _CHUNK_SIZE
+        is_last = end >= len(data)
+        body = {
+            "path": "dropped.bin",
+            "type": "file",
+            "format": "base64",
+            "chunk": -1 if is_last else chunk_number,
+            "content": base64.b64encode(data[offset:end]).decode("ascii"),
+        }
+        anyio.run(
+            _JupyQtContents.save_content, fake, "dropped.bin", _FakeRequest(body), None, None,
+        )
+        offset = end
+        chunk_number += 1
+
+    assert (tmp_path / "dropped.bin").read_bytes() == data
 
 
 def test_upstream_fps_contents_rejects_copy_from(tmp_path, monkeypatch):
