@@ -105,7 +105,7 @@ class _JupyQtContents(_Contents):
             await self.write_content(body)
         except Exception as exc:
             raise HTTPException(status_code=404, detail=f"Error saving {body.get('path')}") from exc
-        return await self.read_content(body["path"], False)
+        return await self.read_content(body["path"], get_content=False)
 
     async def _copy_content(self, dest_dir: str | None, src: str) -> Content:
         # FastAPI's {path:path} passes "/" for /api/contents/ and "sub" for
