@@ -102,3 +102,8 @@ uv run python examples/demo_app.py
 ```
 
 Three threads, no shared event loop, no reentrancy.
+
+## Known limitations
+
+- **Concurrent uploads to the same path aren't safe.** The file-browser upload handler assembles chunked uploads by path, not by upload session — re-dragging the same file while an upload is still in flight, or retried/out-of-order chunks, can silently produce a corrupted file. Uploading distinct files concurrently is unaffected.
+- **PDF / WebPDF notebook export need extra tooling nbconvert doesn't bundle.** "Export Notebook As → PDF" requires a LaTeX toolchain (e.g. TeX Live with `xelatex`) on the host machine; "WebPDF" requires Playwright. Neither is installed by jupyqt — install them separately if you need those export formats. HTML, Markdown, and script export work out of the box.

@@ -84,6 +84,8 @@ class JupyterLabWidget(QStackedWidget):
             download.setDownloadDirectory(path.rsplit("/", 1)[0])
             download.setDownloadFileName(path.rsplit("/", 1)[1])
             download.accept()
+        else:
+            download.cancel()
 
     def _on_load_finished(self, ok: bool) -> None:  # noqa: FBT001
         if ok:
