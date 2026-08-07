@@ -145,6 +145,20 @@ class ServerLauncher:
         """The full JupyterLab URL including the authentication token."""
         return f"http://localhost:{self._port}/lab?token={self._token}"
 
+    @property
+    def is_running(self) -> bool:
+        """Whether the server thread is alive and started without error.
+
+        JupyterLab's File > Shut Down exits the whole fps app, so a launcher can
+        die without anyone calling stop(). Callers must check this before reusing
+        one.
+        """
+        return (
+            self._thread is not None
+            and self._thread.is_alive()
+            and self._error is None
+        )
+
     def start(self) -> None:
         """Launch the server thread and block until the server is ready."""
         self._thread = threading.Thread(target=self._run, daemon=True, name="jupyqt-server")

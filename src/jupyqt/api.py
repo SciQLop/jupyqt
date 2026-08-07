@@ -68,9 +68,17 @@ class EmbeddedJupyter:
         return QtProxy(obj, self._invoker)
 
     def _ensure_server(self) -> None:
-        """Start the jupyverse server if not already running."""
+        """Start the jupyverse server, replacing one that has died.
+
+        JupyterLab's File > Shut Down exits the fps app and ends the server
+        thread. Reusing that launcher would leave the panel pointing at a closed
+        port with no way back, so a dead one is joined and replaced.
+        """
         if self._launcher is not None:
-            return
+            if self._launcher.is_running:
+                return
+            self._launcher.stop()
+            self._launcher = None
         if not self._started:
             raise RuntimeError("Call start() before requesting widget or browser")
         from jupyqt.server.launcher import ServerLauncher  # noqa: PLC0415
@@ -78,17 +86,22 @@ class EmbeddedJupyter:
             self._shell, self._kernel_thread, port=self._port, cwd=self._cwd,
         )
         self._launcher.start()
-        if self._widget is not None:
-            self._widget.load(self._launcher.url)
 
     def widget(self) -> Any:
-        """Return the JupyterLab QWidget, starting the server if needed."""
+        """Return the JupyterLab QWidget, starting or relaunching the server if needed.
+
+        Navigates back to Lab only when the view isn't already there — after a
+        server restart (new port) or after Lab's File > Log Out sent it to
+        /logout. Reloading unconditionally would throw away the running Lab's
+        state every time the panel is re-shown.
+        """
         self._ensure_server()
         if self._widget is None:
             from jupyqt.qt.widget import JupyterLabWidget  # noqa: PLC0415
             self._widget = JupyterLabWidget()
-        if self._launcher is not None:
-            self._widget.load(self._launcher.url)
+        lab_url = self._launcher.url  # ty: ignore[unresolved-attribute]
+        if not self._widget.is_on(lab_url.split("?")[0]):
+            self._widget.load(lab_url)
         return self._widget
 
     def open_in_browser(self) -> None:

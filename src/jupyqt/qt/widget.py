@@ -69,6 +69,15 @@ class JupyterLabWidget(QStackedWidget):
         self._url = url
         self._web_view.load(QUrl(url))
 
+    def is_on(self, url_prefix: str) -> bool:
+        """Whether the page currently shown starts with url_prefix.
+
+        Reports where the view actually *is*, not where it was last sent: Lab's
+        File > Log Out navigates it to /logout on its own, and only the committed
+        URL reveals that.
+        """
+        return self._web_view.url().toString().startswith(url_prefix)
+
     def open_in_browser(self) -> None:
         """Open the current URL in the system default browser."""
         if self._url:
