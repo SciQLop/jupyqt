@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.6.4](https://github.com/jeandet/jupyqt/releases/tag/0.6.4) - 2026-08-07
+
+<small>[Compare with 0.6.3](https://github.com/jeandet/jupyqt/compare/0.6.3...0.6.4)</small>
+
+### Bug Fixes
+
+- relaunch JupyterLab after Shut Down or Log Out ([d953254](https://github.com/jeandet/jupyqt/commit/d95325486428805369ec2a88bfea8d30c87ec696) by Alexis Jeandet). Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+- marshal everything QtProxy hands out or takes back ([05ae2a1](https://github.com/jeandet/jupyqt/commit/05ae2a17001837dead534ac6457414d91e3919be) by Alexis Jeandet). Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
 ## [0.6.3](https://github.com/jeandet/jupyqt/releases/tag/0.6.3) - 2026-08-06
 
 <small>[Compare with 0.6.2](https://github.com/jeandet/jupyqt/compare/0.6.2...0.6.3)</small>
