@@ -118,11 +118,16 @@ def test_proxy_wraps_qobjects_inside_returned_containers(qtbot):
 
     proxy = QtProxy(parent, MainThreadInvoker())
 
-    children = _run_in_worker(qtbot, lambda: proxy.children())
+    def list_children():
+        return proxy.children()
+
+    children = _run_in_worker(qtbot, list_children)
+
+    def call_first_child():
+        return children[0].get_thread_name()
 
     assert all(isinstance(c, QtProxy) for c in children)
-    assert _run_in_worker(qtbot, lambda: children[0].get_thread_name()) == \
-        threading.main_thread().name
+    assert _run_in_worker(qtbot, call_first_child) == threading.main_thread().name
 
 
 def test_proxy_keeps_signals_connectable(qtbot):
@@ -143,11 +148,10 @@ def test_proxy_marshals_attribute_assignment(qtbot):
 
     def assign():
         proxy.late_attribute = 42
-        return None
 
     _run_in_worker(qtbot, assign)
 
-    assert widget.late_attribute == 42
+    assert getattr(widget, "late_attribute") == 42  # noqa: B009 — set through the proxy
 
 
 def test_proxy_unwraps_proxied_arguments(qtbot):
