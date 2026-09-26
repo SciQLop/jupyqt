@@ -11,6 +11,8 @@ from jupyqt.qt.proxy import MainThreadInvoker, QtProxy
 if TYPE_CHECKING:
     from IPython.core.interactiveshell import InteractiveShell
 
+    from jupyqt.server.contents import NotebookHooks
+
 
 class EmbeddedJupyter:
     """Batteries-included JupyterLab embedding for PySide6 apps.
@@ -54,6 +56,17 @@ class EmbeddedJupyter:
     def kernel_thread(self) -> KernelThread:
         """The background KernelThread that owns the shell after start()."""
         return self._kernel_thread
+
+    @property
+    def notebook_hooks(self) -> NotebookHooks:
+        """Callbacks the server runs when a notebook is saved or opened.
+
+        Register with ``notebook_hooks.add_save_hook(fn)`` (``fn(path, nb) -> nb``)
+        or ``notebook_hooks.add_open_hook(fn)`` (``fn(path, nb)``). Hooks run in
+        the server thread, not the Qt main thread.
+        """
+        from jupyqt.server.contents import NOTEBOOK_HOOKS  # noqa: PLC0415
+        return NOTEBOOK_HOOKS
 
     def interrupt(self) -> None:
         """Raise KeyboardInterrupt in the kernel thread to stop a running cell."""

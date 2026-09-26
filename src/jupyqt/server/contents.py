@@ -24,6 +24,10 @@ Four upstream gaps are patched here:
 
 This module provides a subclass that fixes all four, plus a jupyverse
 Module that registers it in place of the default fps-contents ContentsModule.
+
+It also runs the host application's notebook hooks (`NOTEBOOK_HOOKS`) when a
+notebook is saved or opened, so the host can stamp or inspect notebook
+metadata without a JupyterLab frontend extension.
 """
 
 from __future__ import annotations
@@ -31,7 +35,7 @@ from __future__ import annotations
 import base64
 import json
 import shutil
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import structlog
 from anyio import CancelScope, Path, to_thread
@@ -45,10 +49,64 @@ from jupyverse_contents.models import Content, SaveContent
 from starlette.responses import FileResponse
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from starlette.requests import Request
     from starlette.responses import Response
 
 logger = structlog.get_logger()
+
+
+class NotebookHooks:
+    """Host callbacks run in the server thread when a notebook is saved or opened.
+
+    Save hooks take ``(absolute_path, notebook_dict)`` and return the notebook
+    to write. Open hooks take the same arguments and return nothing. A hook
+    that raises is logged and skipped: a broken hook must never lose a save.
+    Hooks run on the server's event loop, so they must be quick.
+    """
+
+    def __init__(self) -> None:
+        """Start with no hooks."""
+        self._save_hooks: list[Callable[[str, dict], dict]] = []
+        self._open_hooks: list[Callable[[str, dict], Any]] = []
+
+    def add_save_hook(self, hook: Callable[[str, dict], dict]) -> None:
+        """Run *hook* on every notebook save; its return value is what gets written."""
+        self._save_hooks.append(hook)
+
+    def add_open_hook(self, hook: Callable[[str, dict], Any]) -> None:
+        """Run *hook* every time a notebook's content is read, i.e. opened."""
+        self._open_hooks.append(hook)
+
+    def clear(self) -> None:
+        """Remove every hook."""
+        self._save_hooks.clear()
+        self._open_hooks.clear()
+
+    def on_save(self, path: str, notebook: dict) -> dict:
+        """Pass *notebook* through every save hook."""
+        for hook in self._save_hooks:
+            try:
+                notebook = hook(path, notebook)
+            except Exception:  # noqa: PERF203 -- one broken hook must not skip the others
+                logger.exception("Notebook save hook failed", path=path)
+        return notebook
+
+    def on_open(self, path: str, notebook: dict | str) -> None:
+        """Notify every open hook; *notebook* may still be serialized JSON."""
+        if not self._open_hooks:
+            return
+        if isinstance(notebook, str):
+            notebook = json.loads(notebook)
+        for hook in self._open_hooks:
+            try:
+                hook(path, notebook)
+            except Exception:  # noqa: PERF203 -- one broken hook must not skip the others
+                logger.exception("Notebook open hook failed", path=path)
+
+
+NOTEBOOK_HOOKS = NotebookHooks()
 
 
 class _JupyQtContents(_Contents):
@@ -91,6 +149,19 @@ class _JupyQtContents(_Contents):
         if "copy_from" in body:
             return await self._copy_content(path, body["copy_from"])
         return await super().create_content(path, request, user)
+
+    async def get_content(
+        self,
+        path: str,
+        content: int,
+        user: User | None = None,
+    ) -> Content:
+        """Read content, running the notebook open hooks when a notebook is opened."""
+        model = await super().get_content(path, content, user)
+        if content and model.type == "notebook":
+            absolute = str(await Path(path.lstrip("/")).absolute())
+            NOTEBOOK_HOOKS.on_open(absolute, cast("dict | str", model.content))
+        return model
 
     async def save_content(
         self,
@@ -147,6 +218,9 @@ class _JupyQtContents(_Contents):
                         and "orig_nbformat" in dict_content["metadata"]
                     ):
                         del dict_content["metadata"]["orig_nbformat"]
+                    if content.type == "notebook":
+                        absolute = str(await Path(content.path).absolute())
+                        dict_content = NOTEBOOK_HOOKS.on_save(absolute, dict_content)
                     try:
                         str_content = json.dumps(dict_content, indent=2)
                     except TypeError as exc:

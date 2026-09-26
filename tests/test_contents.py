@@ -236,3 +236,101 @@ def test_jupyqt_contents_text_path_still_works(tmp_path, monkeypatch):
     anyio.run(_JupyQtContents.write_content, _FakeContents(), payload)
 
     assert (tmp_path / "hello.txt").read_text() == "hello\nworld\n"
+
+
+_NOTEBOOK = {"cells": [], "metadata": {}, "nbformat": 4, "nbformat_minor": 5}
+
+
+def _notebook_payload() -> SaveContent:
+    return SaveContent(path="nb.ipynb", type="notebook", format="json",
+                       content=json.loads(json.dumps(_NOTEBOOK)))
+
+
+@pytest.fixture
+def notebook_hooks():
+    from jupyqt.server.contents import NOTEBOOK_HOOKS
+    yield NOTEBOOK_HOOKS
+    NOTEBOOK_HOOKS.clear()
+
+
+def _stamp(_path: str, nb: dict) -> dict:
+    return {**nb, "metadata": {**nb["metadata"], "stamp": 1}}
+
+
+def test_save_hook_rewrites_saved_notebook(tmp_path, monkeypatch, notebook_hooks):
+    monkeypatch.chdir(tmp_path)
+    notebook_hooks.add_save_hook(_stamp)
+
+    anyio.run(_JupyQtContents.write_content, _FakeContents(), _notebook_payload())
+
+    assert json.loads((tmp_path / "nb.ipynb").read_text())["metadata"] == {"stamp": 1}
+
+
+def test_save_hook_receives_absolute_path(tmp_path, monkeypatch, notebook_hooks):
+    monkeypatch.chdir(tmp_path)
+    seen = []
+    notebook_hooks.add_save_hook(lambda path, nb: seen.append(path) or nb)
+
+    anyio.run(_JupyQtContents.write_content, _FakeContents(), _notebook_payload())
+
+    assert seen == [str(tmp_path / "nb.ipynb")]
+
+
+def test_failing_save_hook_still_saves_notebook(tmp_path, monkeypatch, notebook_hooks):
+    monkeypatch.chdir(tmp_path)
+
+    def broken(_path, _nb):
+        raise RuntimeError("boom")
+
+    notebook_hooks.add_save_hook(broken)
+    notebook_hooks.add_save_hook(_stamp)
+
+    anyio.run(_JupyQtContents.write_content, _FakeContents(), _notebook_payload())
+
+    assert json.loads((tmp_path / "nb.ipynb").read_text())["metadata"] == {"stamp": 1}
+
+
+def test_save_hook_ignores_plain_json_files(tmp_path, monkeypatch, notebook_hooks):
+    monkeypatch.chdir(tmp_path)
+    notebook_hooks.add_save_hook(_stamp)
+    payload = SaveContent(path="data.json", type="file", format="json", content={"metadata": {}})
+
+    anyio.run(_JupyQtContents.write_content, _FakeContents(), payload)
+
+    assert json.loads((tmp_path / "data.json").read_text()) == {"metadata": {}}
+
+
+def test_open_hook_fires_when_notebook_content_is_read(tmp_path, monkeypatch, notebook_hooks):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "nb.ipynb").write_text(json.dumps({**_NOTEBOOK, "metadata": {"k": "v"}}))
+    seen = []
+    notebook_hooks.add_open_hook(lambda path, nb: seen.append((path, nb["metadata"])))
+
+    anyio.run(_JupyQtContents.get_content, _FakeContents(), "nb.ipynb", 1)
+
+    assert seen == [(str(tmp_path / "nb.ipynb"), {"k": "v"})]
+
+
+def test_open_hook_skips_metadata_only_reads(tmp_path, monkeypatch, notebook_hooks):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "nb.ipynb").write_text(json.dumps(_NOTEBOOK))
+    seen = []
+    notebook_hooks.add_open_hook(lambda path, nb: seen.append(path))
+
+    anyio.run(_JupyQtContents.get_content, _FakeContents(), "nb.ipynb", 0)
+
+    assert seen == []
+
+
+def test_failing_open_hook_still_returns_content(tmp_path, monkeypatch, notebook_hooks):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "nb.ipynb").write_text(json.dumps(_NOTEBOOK))
+
+    def broken(_path, _nb):
+        raise RuntimeError("boom")
+
+    notebook_hooks.add_open_hook(broken)
+
+    model = anyio.run(_JupyQtContents.get_content, _FakeContents(), "nb.ipynb", 1)
+
+    assert model.type == "notebook"

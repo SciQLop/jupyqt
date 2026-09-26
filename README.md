@@ -71,6 +71,24 @@ for i in range(5):
     do_stuff()
 ```
 
+## Notebook save and open hooks
+
+Run your own code when a notebook is saved or opened, for example to stamp
+metadata into every saved notebook:
+
+```python
+def stamp(path: str, notebook: dict) -> dict:
+    notebook["metadata"]["my_app"] = {"version": "1.2"}
+    return notebook
+
+jupyter.notebook_hooks.add_save_hook(stamp)
+jupyter.notebook_hooks.add_open_hook(lambda path, notebook: print("opened", path))
+```
+
+Hooks run in the server thread, so keep them quick and marshal any Qt work
+to the main thread. A hook that raises is logged and skipped; the save still
+happens.
+
 ## Examples
 
 ```bash
