@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.6.5](https://github.com/jeandet/jupyqt/releases/tag/0.6.5) - 2026-09-26
+
+<small>[Compare with 0.6.4](https://github.com/jeandet/jupyqt/compare/0.6.4...0.6.5)</small>
+
+### Features
+
+- notebook save and open hooks ([1c8082f](https://github.com/jeandet/jupyqt/commit/1c8082fa39242c70f2dc8cf762217c5a144ea103) by Alexis Jeandet). Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+
 ## [0.6.4](https://github.com/jeandet/jupyqt/releases/tag/0.6.4) - 2026-08-07
 
 <small>[Compare with 0.6.3](https://github.com/jeandet/jupyqt/compare/0.6.3...0.6.4)</small>
