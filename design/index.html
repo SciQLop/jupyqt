@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.0.53">
+      <meta name="generator" content="zensical-0.0.65">
     
     
       
@@ -32,12 +32,12 @@
       
         
       
-      <link rel="stylesheet" href="../assets/stylesheets/modern/main.20815dad.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.40d3fdbb.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.812a03bb.min.css">
       
       
 
@@ -391,20 +391,21 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_1">
-            <span class="md-nav__icon md-icon"></span>
-            
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_1">
+              <span class="md-nav__icon md-icon"></span>
+              
   
   Home
 
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
+              
+                
+                  
   
   
   
@@ -428,10 +429,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -455,10 +456,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -482,10 +483,11 @@
     </li>
   
 
+                
               
-            
-          </ul>
-        </nav>
+            </ul>
+          </nav>
+        
       
     </li>
   
@@ -563,18 +565,19 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3">
+              <span class="md-nav__icon md-icon"></span>
+              
   
   Development
 
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
+                  
   
   
   
@@ -598,10 +601,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -625,10 +628,11 @@
     </li>
   
 
+                
               
-            
-          </ul>
-        </nav>
+            </ul>
+          </nav>
+        
       
     </li>
   
@@ -1038,25 +1042,25 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">shell</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InteractiveShell</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Full IPython shell for registering magics, completions, etc.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Full IPython shell for registering magics, completions, etc."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">push</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Thread-safe variable injection into the kernel namespace.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Thread-safe variable injection into the kernel namespace."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">wrap_qt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QtProxy</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrap a QObject for safe access from notebook cells.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Wrap a QObject for safe access from notebook cells."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">widget</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JupyterLabWidget</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;QWebEngineView embedding JupyterLab.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""QWebEngineView embedding JupyterLab."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">open_in_browser</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Open JupyterLab in the default browser.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Open JupyterLab in the default browser."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start kernel thread + jupyverse server.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Start kernel thread + jupyverse server."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stop everything cleanly.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Stop everything cleanly."""</span>
 </code></pre></div>
 <ul>
 <li><code>shell</code> is accessible before <code>start()</code> for registering magics and pushing initial variables.</li>
@@ -1109,13 +1113,13 @@
 <div class="highlight"><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">dispatch_shell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
     <span class="k">async</span> <span class="k">for</span> <span class="n">raw_msg</span> <span class="ow">in</span> <span class="n">channel</span><span class="p">:</span>  <span class="c1"># list[bytes]</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="n">deserialize_message</span><span class="p">(</span><span class="n">raw_msg</span><span class="p">)</span>
-        <span class="n">handler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="p">[</span><span class="n">msg</span><span class="p">[</span><span class="s2">&quot;header&quot;</span><span class="p">][</span><span class="s2">&quot;msg_type&quot;</span><span class="p">]]</span>
-        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_publish_status</span><span class="p">(</span><span class="s2">&quot;busy&quot;</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+        <span class="n">handler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handlers</span><span class="p">[</span><span class="n">msg</span><span class="p">[</span><span class="s2">"header"</span><span class="p">][</span><span class="s2">"msg_type"</span><span class="p">]]</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_publish_status</span><span class="p">(</span><span class="s2">"busy"</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
         <span class="c1"># Handlers may publish multiple iopub messages (stream, display_data, etc.)</span>
         <span class="c1"># before returning the shell reply</span>
         <span class="n">reply</span> <span class="o">=</span> <span class="k">await</span> <span class="n">handler</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
         <span class="k">await</span> <span class="n">channel</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">serialize_message</span><span class="p">(</span><span class="n">reply</span><span class="p">))</span>
-        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_publish_status</span><span class="p">(</span><span class="s2">&quot;idle&quot;</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_publish_status</span><span class="p">(</span><span class="s2">"idle"</span><span class="p">,</span> <span class="n">msg</span><span class="p">)</span>
 </code></pre></div></p>
 <h3 id="5-jupyverse-kernel-integration-serverpluginpy">5. Jupyverse Kernel Integration (<code>server/plugin.py</code>)<a class="headerlink" href="#5-jupyverse-kernel-integration-serverpluginpy" title="Permanent link">&para;</a></h3>
 <p>A subclass of jupyverse's <code>Kernel</code> ABC, provided to jupyverse via a custom <code>KernelFactory</code>. The factory is registered with jupyverse's <code>_Kernels</code> router via <code>register_kernel_factory()</code> (or as the <code>DefaultKernelFactory</code>).</p>
@@ -1182,7 +1186,7 @@
 
 <span class="n">jupyter</span> <span class="o">=</span> <span class="n">EmbeddedJupyter</span><span class="p">()</span>
 <span class="n">register_sciqlop_magics</span><span class="p">(</span><span class="n">jupyter</span><span class="o">.</span><span class="n">shell</span><span class="p">)</span>
-<span class="n">jupyter</span><span class="o">.</span><span class="n">push</span><span class="p">({</span><span class="s2">&quot;main_window&quot;</span><span class="p">:</span> <span class="n">jupyter</span><span class="o">.</span><span class="n">wrap_qt</span><span class="p">(</span><span class="n">main_window</span><span class="p">)})</span>
+<span class="n">jupyter</span><span class="o">.</span><span class="n">push</span><span class="p">({</span><span class="s2">"main_window"</span><span class="p">:</span> <span class="n">jupyter</span><span class="o">.</span><span class="n">wrap_qt</span><span class="p">(</span><span class="n">main_window</span><span class="p">)})</span>
 <span class="n">jupyter</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 <span class="n">dock</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">jupyter</span><span class="o">.</span><span class="n">widget</span><span class="p">())</span>
 </code></pre></div></p>
@@ -1412,10 +1416,14 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","search.highlight","toc.follow"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","search.highlight","toc.follow"],"redirect":null,"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../assets/javascripts/bundle.69c251d7.min.js"></script>
+      <script src="../assets/javascripts/bundle.c04ba553.min.js"></script>
       
         <script src="../js/feedback.js"></script>
       
