@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.6.6](https://github.com/jeandet/jupyqt/releases/tag/0.6.6) - 2026-10-06
+
+<small>[Compare with 0.6.5](https://github.com/jeandet/jupyqt/compare/0.6.5...0.6.6)</small>
+
+### Bug Fixes
+
+- load JupyterLab again when it fails to load or boot ([c2703fb](https://github.com/jeandet/jupyqt/commit/c2703fb152ff450f1a0c7d21a759779af096fd98) by Alexis Jeandet). Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+
 ## [0.6.5](https://github.com/jeandet/jupyqt/releases/tag/0.6.5) - 2026-09-26
 
 <small>[Compare with 0.6.4](https://github.com/jeandet/jupyqt/compare/0.6.4...0.6.5)</small>
