@@ -87,7 +87,7 @@ ci = [
     "pytest-xdist>=3.6",
     "pytest-qt>=4.2",
     "ruff>=0.4",
-    "ty>=0.0.14",
+    "ty==0.0.109",
     "types-markdown>=3.6",
     "types-pyyaml>=6.0",
 ]
