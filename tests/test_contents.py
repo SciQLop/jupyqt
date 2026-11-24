@@ -329,20 +329,11 @@ def test_failing_open_hook_still_returns_content(tmp_path, monkeypatch, notebook
     assert model.type == "notebook"
 
 
-# JupyterLab asks for images and PDFs with `?format=base64`, but the upstream
-# GET route has no `format` parameter, so the server must pick the format itself.
+# JupyterLab asks for images and PDFs with `?format=base64`. Before fps-contents
+# 0.11.6 the upstream route dropped that query, so without a format the server
+# must pick the format itself.
 _PNG = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
 _SVG = '<svg xmlns="http://www.w3.org/2000/svg"/>'
-
-
-def test_upstream_fps_contents_cannot_read_binary_file(tmp_path, monkeypatch):
-    from fastapi import HTTPException
-
-    monkeypatch.chdir(tmp_path)
-    (tmp_path / "plot.png").write_bytes(_PNG)
-
-    with pytest.raises(HTTPException):
-        anyio.run(_Contents.get_content, _FakeContents(), "plot.png", 1, None)
 
 
 def test_binary_file_is_served_as_base64_with_its_mimetype(tmp_path, monkeypatch):
