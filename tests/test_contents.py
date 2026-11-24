@@ -435,3 +435,46 @@ def test_serving_a_foreign_kernel_notebook_leaves_the_file_and_open_hooks_untouc
 
     assert (tmp_path / "nb.ipynb").read_text() == on_disk
     assert seen == ["julia-1.10"]
+
+
+# The fixed upstream route (jupyverse contents-format PR) passes the requested
+# format as a 4th positional argument: get_content(path, content, user, format).
+def _get_with_format(name: str, file_format: str | None):
+    return anyio.run(_JupyQtContents.get_content, _FakeContents(), name, 1, None, file_format)
+
+
+def test_requested_base64_format_is_honoured_for_a_text_file(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "data.csv").write_text("a,b\n")
+
+    model = _get_with_format("data.csv", "base64")
+
+    assert (model.format, model.mimetype) == ("base64", "text/csv")
+    assert base64.b64decode(cast("str", model.content)) == b"a,b\n"
+
+
+def test_requested_text_format_is_honoured(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "plot.svg").write_text(_SVG)
+
+    model = _get_with_format("plot.svg", "text")
+
+    assert (model.format, model.mimetype, model.content) == ("text", "image/svg+xml", _SVG)
+
+
+def test_no_requested_format_keeps_the_utf8_fallback(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "plot.png").write_bytes(_PNG)
+
+    model = _get_with_format("plot.png", None)
+
+    assert (model.format, model.mimetype) == ("base64", "image/png")
+
+
+def test_notebook_requested_as_json_still_names_the_jupyqt_kernel(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    _write_notebook(tmp_path / "nb.ipynb", _JULIA)
+
+    model = _get_with_format("nb.ipynb", "json")
+
+    assert cast("dict", model.content)["metadata"]["kernelspec"]["name"] == "python3"
