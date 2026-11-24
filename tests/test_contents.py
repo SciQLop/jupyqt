@@ -375,7 +375,7 @@ def test_svg_is_served_as_text_with_image_mimetype(tmp_path, monkeypatch):
 @pytest.mark.parametrize(("name", "mimetype"), [("data.csv", "text/csv"), ("notes.txt", "text/plain")])
 def test_text_file_is_served_as_text(tmp_path, monkeypatch, name, mimetype):
     monkeypatch.chdir(tmp_path)
-    (tmp_path / name).write_text("a,b\n1,2\n")
+    (tmp_path / name).write_bytes(b"a,b\n1,2\n")
 
     model = anyio.run(_JupyQtContents.get_content, _FakeContents(), name, 1)
 
@@ -445,7 +445,7 @@ def _get_with_format(name: str, file_format: str | None):
 
 def test_requested_base64_format_is_honoured_for_a_text_file(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    (tmp_path / "data.csv").write_text("a,b\n")
+    (tmp_path / "data.csv").write_bytes(b"a,b\n")
 
     model = _get_with_format("data.csv", "base64")
 

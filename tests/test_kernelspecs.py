@@ -126,6 +126,17 @@ def test_old_jupyqt_kernelspec_is_removed_with_its_empty_folder(tmp_path, argv0)
     assert (tmp_path / "kernels").exists(), "only the python3 folder may go"
 
 
+def test_old_jupyqt_kernelspec_written_on_windows_is_removed(tmp_path):
+    """Older jupyqt wrote in text mode, so on Windows the file has CRLF line endings."""
+    kernel_dir = _kernel_dir(tmp_path)
+    crlf = _old_jupyqt_text("C:\\SciQLop\\python.exe").replace("\n", "\r\n")
+    (kernel_dir / "kernel.json").write_bytes(crlf.encode("utf-8"))
+
+    remove_old_jupyqt_kernelspec(kernel_dir)
+
+    assert not kernel_dir.exists()
+
+
 def test_folder_with_other_files_is_kept(tmp_path):
     kernel_dir = _kernel_dir(tmp_path, _old_jupyqt_text("python3"))
     (kernel_dir / "logo-64x64.png").write_bytes(b"png")

@@ -55,6 +55,8 @@ def is_old_jupyqt_kernelspec(text: str) -> bool:
     jupyqt 0.4.0 to 0.6.6 wrote ``json.dumps(spec, indent=1)`` plus a newline, with these
     three keys and ``argv[0]`` set to ``sys.executable`` (an unreleased branch
     used ``"python3"``). Anything else, even reformatted, is someone else's.
+    It wrote in text mode, so *text* must be read in text mode too: on Windows
+    the file has CRLF line endings.
     """
     try:
         spec = json.loads(text)
