@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 from typing import Any
+from urllib.parse import quote, urlsplit, urlunsplit
 
 from PySide6.QtCore import Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
@@ -20,6 +22,26 @@ WATCHDOG_INTERVAL_MS = 1000
 BOOT_TIMEOUT_S = 15.0
 GIVE_UP_S = 120.0
 _LAB_BOOTED_JS = "!!document.querySelector('.jp-LabShell')"
+
+
+def lab_tree_url(lab_url: str, path: str) -> str:
+    """Lab's ``/lab/tree/<path>`` URL, which boots Lab with that file open.
+
+    *lab_url* is any Lab URL of the server (``/lab`` or a ``/lab/tree/...`` one);
+    its query, which carries the token, is kept.
+    """
+    parts = urlsplit(lab_url)
+    root = parts.path.split("/lab", 1)[0]
+    return urlunsplit(parts._replace(path=f"{root}/lab/tree/{quote(path)}"))
+
+
+def _open_file_js(path: str) -> str:
+    """Script that opens *path* in the running Lab; it evaluates to false when the page has no Lab app."""
+    return (
+        "(() => { const app = window.jupyterapp; if (!app) { return false; }"
+        f" app.restored.then(() => app.commands.execute('docmanager:open', {{path: {json.dumps(path)}}}));"
+        " return true; })()"
+    )
 
 
 def watchdog_action(*, booted: bool, load_failed: bool, attempt_age: float, total_age: float) -> str:
@@ -147,6 +169,24 @@ class JupyterLabWidget(QStackedWidget):
         URL reveals that.
         """
         return self._web_view.url().toString().startswith(url_prefix)
+
+    def open_file(self, path: str, lab_url: str) -> None:
+        """Open *path*, relative to the server root, with Lab's default viewer.
+
+        A running Lab opens it with its ``docmanager:open`` command, so nothing
+        reloads. When the view is not on Lab, or the page has no Lab app yet,
+        Lab is loaded on the file's ``/lab/tree`` URL instead.
+        """
+        tree_url = lab_tree_url(lab_url, path)
+        if not self.is_on(lab_url.partition("?")[0]):
+            self.load(tree_url)
+            return
+
+        def fall_back_unless_opened(opened: object) -> None:
+            if not opened:
+                self.load(tree_url)
+
+        self._web_view.page().runJavaScript(_open_file_js(path), 0, fall_back_unless_opened)
 
     def open_in_browser(self) -> None:
         """Open the current URL in the system default browser."""

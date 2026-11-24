@@ -171,3 +171,19 @@ def test_real_launcher_reports_not_running_before_start():
     launcher = ServerLauncher(shell=None, port=12345)  # ty: ignore[invalid-argument-type]
 
     assert launcher.is_running is False
+
+
+def _record_open_file(self, path: str, lab_url: str) -> None:
+    self.opened.append((path, lab_url))
+
+
+def test_open_file_hands_the_file_to_the_widget_without_loading_lab_first(
+    embedded, fake_widget, monkeypatch,
+):
+    monkeypatch.setattr(FakeWidget, "opened", [], raising=False)
+    monkeypatch.setattr(FakeWidget, "open_file", _record_open_file, raising=False)
+
+    w = embedded.open_file("plot.png")
+
+    assert w.opened == [("plot.png", embedded._launcher.url)]
+    assert w.loads == [], "open_file must not reload Lab before opening the file"

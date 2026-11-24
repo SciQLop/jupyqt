@@ -108,13 +108,29 @@ class EmbeddedJupyter:
         /logout. Reloading unconditionally would throw away the running Lab's
         state every time the panel is re-shown.
         """
+        widget = self._lab_widget()
+        lab_url = self._launcher.url  # ty: ignore[unresolved-attribute]
+        if not widget.is_on(lab_url.split("?")[0]):
+            widget.load(lab_url)
+        return widget
+
+    def open_file(self, path: str) -> Any:
+        """Open *path*, relative to the server's root directory, in the embedded Lab.
+
+        Notebooks open as notebooks, other files with Lab's default viewer. A
+        running Lab opens the file without reloading; otherwise Lab is loaded
+        straight on that file. Returns the JupyterLab QWidget, as widget() does.
+        """
+        widget = self._lab_widget()
+        widget.open_file(path, self._launcher.url)  # ty: ignore[unresolved-attribute]
+        return widget
+
+    def _lab_widget(self) -> Any:
+        """Ensure the server runs and the widget exists, without navigating it."""
         self._ensure_server()
         if self._widget is None:
             from jupyqt.qt.widget import JupyterLabWidget  # noqa: PLC0415
             self._widget = JupyterLabWidget()
-        lab_url = self._launcher.url  # ty: ignore[unresolved-attribute]
-        if not self._widget.is_on(lab_url.split("?")[0]):
-            self._widget.load(lab_url)
         return self._widget
 
     def open_in_browser(self) -> None:
