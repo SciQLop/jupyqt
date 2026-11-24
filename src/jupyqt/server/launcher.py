@@ -148,6 +148,10 @@ class ServerLauncher:
 
             JupyQtKernelModule.set_shell(self._shell, self._kernel_thread)  # ty: ignore[unresolved-attribute]
 
+            from jupyqt.server.kernelspec import remove_old_jupyqt_kernelspecs  # noqa: PLC0415
+
+            remove_old_jupyqt_kernelspecs()
+
             import fps  # noqa: PLC0415
 
             config = _build_config(self._port)
