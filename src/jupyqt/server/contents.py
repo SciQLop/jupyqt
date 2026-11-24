@@ -33,6 +33,9 @@ Module that registers it in place of the default fps-contents ContentsModule.
 It also runs the host application's notebook hooks (`NOTEBOOK_HOOKS`) when a
 notebook is saved or opened, so the host can stamp or inspect notebook
 metadata without a JupyterLab frontend extension.
+
+Notebooks are served naming jupyqt's kernel (see `jupyqt.server.kernelspec`),
+so Lab never asks which kernel to start.
 """
 
 from __future__ import annotations
@@ -53,6 +56,8 @@ from jupyverse_auth import Auth, User
 from jupyverse_contents import Contents
 from jupyverse_contents.models import Content, SaveContent
 from starlette.responses import FileResponse
+
+from jupyqt.server.kernelspec import with_jupyqt_kernel
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -170,6 +175,7 @@ class _JupyQtContents(_Contents):
         if content and model.type == "notebook":
             absolute = str(await Path(path.lstrip("/")).absolute())
             NOTEBOOK_HOOKS.on_open(absolute, cast("dict | str", model.content))
+            model = _naming_jupyqt_kernel(model)
         return model
 
     async def save_content(
@@ -241,6 +247,13 @@ class _JupyQtContents(_Contents):
                     return
                 content.content = cast("str", content.content)
                 await Path(content.path).write_text(content.content)
+
+
+def _naming_jupyqt_kernel(model: Content) -> Content:
+    """Serve a notebook naming jupyqt's kernel, so Lab never asks which kernel to start."""
+    content = cast("dict | str", model.content)
+    notebook = with_jupyqt_kernel(json.loads(content) if isinstance(content, str) else content)
+    return model.model_copy(update={"content": json.dumps(notebook) if isinstance(content, str) else notebook})
 
 
 async def _sniff_format(path: str) -> str | None:
