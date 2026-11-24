@@ -166,9 +166,14 @@ class _JupyQtContents(_Contents):
         path: str,
         content: int,
         user: User | None = None,  # noqa: ARG002
+        format: str | None = None,  # noqa: A002 -- the Contents API's query parameter name
     ) -> Content:
-        """Read content with a real format and mimetype, running notebook open hooks."""
-        file_format = await _sniff_format(path) if content else None
+        """Read content with a real format and mimetype, running notebook open hooks.
+
+        *format* is the requested one (``base64``, ``text``, ``json``). Current
+        jupyverse never passes it, so without it the format is sniffed.
+        """
+        file_format = format or (await _sniff_format(path) if content else None)
         model = await self.read_content(path, bool(content), file_format)
         if model.type == "file":
             model = _with_file_format(model, file_format)
@@ -259,10 +264,10 @@ def _naming_jupyqt_kernel(model: Content) -> Content:
 async def _sniff_format(path: str) -> str | None:
     """Return "base64" for a file that is not UTF-8 text, None to keep upstream's text read.
 
-    simplify: the upstream GET route drops JupyterLab's `?format=` query, so the
-    format is guessed from the bytes, as jupyter_server does when none is given.
-    A pure-ASCII binary (rare) is served as text. Honor `format` once the
-    upstream route forwards it.
+    simplify: jupyverse up to fps-contents 0.11.5 drops JupyterLab's `?format=`
+    query, so the format is guessed from the bytes, as jupyter_server does when
+    none is given. A pure-ASCII binary (rare) is served as text. A requested
+    format, once upstream forwards it, takes precedence over this guess.
     """
     p = Path(path.lstrip("/"))
     if not await p.is_file():
