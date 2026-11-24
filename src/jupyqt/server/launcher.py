@@ -95,6 +95,9 @@ def _build_config(port: int) -> dict[str, Any]:
     jupyverse_modules["contents"] = {
         "type": "jupyqt.server.contents:JupyQtContentsModule",
     }
+    jupyverse_modules["jupyqt_lab"] = {
+        "type": "jupyqt.server.lab:JupyQtLabModule",
+    }
     return {
         "jupyverse": {
             "type": "jupyverse_api.main:JupyverseModule",

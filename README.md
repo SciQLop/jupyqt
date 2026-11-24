@@ -71,6 +71,19 @@ for i in range(5):
     do_stuff()
 ```
 
+## Opening a file in the embedded Lab
+
+Open a file, relative to the server's root directory, with Lab's default viewer
+(notebooks as notebooks, images in the image viewer, ...):
+
+```python
+jupyter.open_file("figures/plot.png")
+```
+
+When Lab is already running it opens the file without reloading the page.
+Otherwise it loads Lab straight on that file. It returns the same widget as
+`widget()`.
+
 ## Notebook save and open hooks
 
 Run your own code when a notebook is saved or opened, for example to stamp
