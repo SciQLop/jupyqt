@@ -9,7 +9,6 @@ tests), execution runs directly in the current thread.
 from __future__ import annotations
 
 import builtins
-import concurrent.futures
 import logging
 import math
 import sys
@@ -395,10 +394,7 @@ class KernelProtocol:
                 return await anyio.to_thread.run_sync(
                     lambda: kernel_thread.run_sync(func, *args, timeout=self._control_timeout),
                 )
-            # concurrent.futures.TimeoutError is a distinct class on 3.10 but
-            # an alias of builtin TimeoutError from 3.11 on; catch both so a
-            # busy kernel degrades gracefully on every supported version.
-            except (TimeoutError, concurrent.futures.TimeoutError):
+            except TimeoutError:
                 log.warning(
                     "kernel busy: '%s' skipped (kernel thread did not free within %.0fs)",
                     getattr(func, "__name__", func), self._control_timeout,
