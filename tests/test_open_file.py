@@ -9,6 +9,7 @@ No Chromium here: the web view is a mock, as in test_widget.py.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import anyio
@@ -17,6 +18,9 @@ import pytest
 from jupyqt.qt.widget import JupyterLabWidget, lab_tree_url
 from jupyqt.server.lab import expose_app_in_browser
 from jupyqt.server.launcher import _build_config
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 LAB = "http://localhost:1234/lab?token=abc"
 
@@ -55,7 +59,7 @@ def _fake_widget(*, on_lab: bool) -> MagicMock:
     return fake
 
 
-def _run_js_call(fake: MagicMock) -> tuple[str, object]:
+def _run_js_call(fake: MagicMock) -> tuple[str, Callable[[object], None]]:
     js, _world, callback = fake._web_view.page().runJavaScript.call_args.args
     return js, callback
 
