@@ -67,6 +67,15 @@ def _build_config(port: int) -> dict[str, Any]:
     }
 
 
+def _hand_shell_to_kernel_module(shell: InteractiveShell, kernel_thread: KernelThread | None) -> None:
+    """Give the in-process kernel module the shell it runs cells in."""
+    from jupyqt.server.plugin import JupyQtKernelModule  # noqa: PLC0415
+
+    if JupyQtKernelModule is None:
+        raise RuntimeError("jupyverse is required to run the JupyterLab server")
+    JupyQtKernelModule.set_shell(shell, kernel_thread)
+
+
 class ServerLauncher:
     """Starts and stops a jupyverse server in a background thread."""
 
@@ -144,9 +153,7 @@ class ServerLauncher:
             if self._cwd is not None:
                 os.chdir(self._cwd)
 
-            from jupyqt.server.plugin import JupyQtKernelModule  # noqa: PLC0415
-
-            JupyQtKernelModule.set_shell(self._shell, self._kernel_thread)  # ty: ignore[unresolved-attribute]
+            _hand_shell_to_kernel_module(self._shell, self._kernel_thread)
 
             from jupyqt.server.kernelspec import remove_old_jupyqt_kernelspecs  # noqa: PLC0415
 

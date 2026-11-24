@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from IPython.core.interactiveshell import InteractiveShell
 
     from jupyqt.server.contents import NotebookHooks
+    from jupyqt.server.launcher import ServerLauncher
 
 
 class EmbeddedJupyter:
@@ -80,8 +81,8 @@ class EmbeddedJupyter:
         """Wrap a QObject so it can be safely accessed from the kernel thread."""
         return QtProxy(obj, self._invoker)
 
-    def _ensure_server(self) -> None:
-        """Start the jupyverse server, replacing one that has died.
+    def _ensure_server(self) -> ServerLauncher:
+        """Return the running jupyverse server, starting or replacing a dead one.
 
         JupyterLab's File > Shut Down exits the fps app and ends the server
         thread. Reusing that launcher would leave the panel pointing at a closed
@@ -89,16 +90,16 @@ class EmbeddedJupyter:
         """
         if self._launcher is not None:
             if self._launcher.is_running:
-                return
+                return self._launcher
             self._launcher.stop()
             self._launcher = None
         if not self._started:
             raise RuntimeError("Call start() before requesting widget or browser")
         from jupyqt.server.launcher import ServerLauncher  # noqa: PLC0415
-        self._launcher = ServerLauncher(
-            self._shell, self._kernel_thread, port=self._port, cwd=self._cwd,
-        )
-        self._launcher.start()
+        launcher = ServerLauncher(self._shell, self._kernel_thread, port=self._port, cwd=self._cwd)
+        launcher.start()
+        self._launcher = launcher
+        return launcher
 
     def widget(self) -> Any:
         """Return the JupyterLab QWidget, starting or relaunching the server if needed.
@@ -108,8 +109,8 @@ class EmbeddedJupyter:
         /logout. Reloading unconditionally would throw away the running Lab's
         state every time the panel is re-shown.
         """
+        lab_url = self._ensure_server().url
         widget = self._lab_widget()
-        lab_url = self._launcher.url  # ty: ignore[unresolved-attribute]
         if not widget.is_on(lab_url.split("?")[0]):
             widget.load(lab_url)
         return widget
@@ -121,13 +122,13 @@ class EmbeddedJupyter:
         running Lab opens the file without reloading; otherwise Lab is loaded
         straight on that file. Returns the JupyterLab QWidget, as widget() does.
         """
+        lab_url = self._ensure_server().url
         widget = self._lab_widget()
-        widget.open_file(path, self._launcher.url)  # ty: ignore[unresolved-attribute]
+        widget.open_file(path, lab_url)
         return widget
 
     def _lab_widget(self) -> Any:
-        """Ensure the server runs and the widget exists, without navigating it."""
-        self._ensure_server()
+        """Return the widget, creating it if needed, without navigating it."""
         if self._widget is None:
             from jupyqt.qt.widget import JupyterLabWidget  # noqa: PLC0415
             self._widget = JupyterLabWidget()
@@ -135,10 +136,10 @@ class EmbeddedJupyter:
 
     def open_in_browser(self) -> None:
         """Open the JupyterLab URL in the system default browser."""
-        self._ensure_server()
+        lab_url = self._ensure_server().url
         from PySide6.QtCore import QUrl  # noqa: PLC0415
         from PySide6.QtGui import QDesktopServices  # noqa: PLC0415
-        QDesktopServices.openUrl(QUrl(self._launcher.url))  # ty: ignore[unresolved-attribute]
+        QDesktopServices.openUrl(QUrl(lab_url))
 
     def start(self, port: int = 0, cwd: str | None = None) -> None:
         """Start the kernel thread. The server starts lazily on first widget()/open_in_browser()."""

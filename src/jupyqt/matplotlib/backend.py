@@ -18,9 +18,9 @@ from __future__ import annotations
 import contextlib
 from typing import Any
 
-from matplotlib._pylab_helpers import Gcf  # ty: ignore[unresolved-import]
-from matplotlib.backend_bases import FigureManagerBase, _Backend  # ty: ignore[unresolved-import]
-from matplotlib.backends.backend_agg import FigureCanvasAgg  # ty: ignore[unresolved-import]
+from matplotlib._pylab_helpers import Gcf  # ty: ignore[import-not-found]
+from matplotlib.backend_bases import FigureManagerBase, _Backend  # ty: ignore[import-not-found]
+from matplotlib.backends.backend_agg import FigureCanvasAgg  # ty: ignore[import-not-found]
 
 
 class FigureCanvasJupyQT(FigureCanvasAgg):
@@ -55,7 +55,7 @@ class FigureManagerJupyQT(FigureManagerBase):
         manager_num = self.num
 
         def _show() -> None:
-            from matplotlib.backends.backend_qtagg import (  # noqa: PLC0415  # ty: ignore[unresolved-import]
+            from matplotlib.backends.backend_qtagg import (  # noqa: PLC0415  # ty: ignore[import-not-found]
                 FigureCanvasQTAgg,
                 NavigationToolbar2QT,
             )

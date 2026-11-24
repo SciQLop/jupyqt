@@ -18,7 +18,7 @@ from packaging.requirements import Requirement
 if sys.version_info >= (3, 11):
     import tomllib
 else:
-    import tomli as tomllib  # ty: ignore[unresolved-import]
+    import tomli as tomllib  # ty: ignore[import-not-found]
 
 project_dir = Path.cwd()
 with project_dir.joinpath("pyproject.toml").open("rb") as pyproject_file:
@@ -53,7 +53,7 @@ def _extra_marker(req: Requirement) -> str | None:
     if not req.marker:
         return None
     try:
-        return next(getattr(marker[2], "value", None) for marker in req.marker._markers if getattr(marker[0], "value", None) == "extra")
+        return next(getattr(marker[2], "value", None) for marker in req.marker._markers if isinstance(marker, tuple) and getattr(marker[0], "value", None) == "extra")
     except StopIteration:
         return None
 

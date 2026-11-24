@@ -95,7 +95,7 @@ class JupyterLabWidget(QStackedWidget):
         self._url: str | None = None
 
         self._placeholder = QLabel("Loading JupyterLab...")
-        self._placeholder.setAlignment(Qt.AlignCenter)  # ty: ignore[unresolved-attribute]
+        self._placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.addWidget(self._placeholder)
 
         self._web_view = QWebEngineView(self)
