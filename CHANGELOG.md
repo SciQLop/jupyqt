@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.7.0](https://github.com/jeandet/jupyqt/releases/tag/0.7.0) - 2026-11-24
+
+<small>[Compare with 0.6.6](https://github.com/jeandet/jupyqt/compare/0.6.6...0.7.0)</small>
+
+### Build
+
+- add Python 3.15 ([20cc66d](https://github.com/jeandet/jupyqt/commit/20cc66d163599f92179c518b6a80babdcdc6c354) by Alexis Jeandet). Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- drop Python 3.10 ([fc142bd](https://github.com/jeandet/jupyqt/commit/fc142bd3e24d61996c9b5f4f4c4cb03f9a74d02c) by Alexis Jeandet). Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- pin ty so CI and local checks agree ([3522b8c](https://github.com/jeandet/jupyqt/commit/3522b8cdfe3cb0a6b7829bc0eac4353f2c71495e) by Alexis Jeandet). Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+### Features
+
+- open a file in the running Lab without reloading it ([950d374](https://github.com/jeandet/jupyqt/commit/950d374f5ba3620d5607bd46dd7607dc64a64f58) by Alexis Jeandet). Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+### Bug Fixes
+
+- pass ty 0.0.109 on existing code ([9bf71e1](https://github.com/jeandet/jupyqt/commit/9bf71e153e7f5b45877ab1c993573dc100fefa8c) by Alexis Jeandet). Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- remove the broken kernelspec older jupyqt wrote ([c2ab52b](https://github.com/jeandet/jupyqt/commit/c2ab52bf5343faf0476364cea38e5cdcfb9bccf4) by Alexis Jeandet). Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- accept the requested contents format ([10b76a4](https://github.com/jeandet/jupyqt/commit/10b76a471d81003705cf5392be65199d6a195d38) by Alexis Jeandet). Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- offer only jupyqt's kernel and never ask which to start ([afede44](https://github.com/jeandet/jupyqt/commit/afede44d3b5efaa6583fcc98c3ffa4a15c337334) by Alexis Jeandet). Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- serve binary files so JupyterLab can open images and PDFs ([02477f4](https://github.com/jeandet/jupyqt/commit/02477f44408df44b975df5ccff94c9630014485b) by Alexis Jeandet). Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
 ## [0.6.6](https://github.com/jeandet/jupyqt/releases/tag/0.6.6) - 2026-10-06
 
 <small>[Compare with 0.6.5](https://github.com/jeandet/jupyqt/compare/0.6.5...0.6.6)</small>
