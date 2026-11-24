@@ -11,8 +11,7 @@ from IPython.core.interactiveshell import InteractiveShell
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from typing_extensions import Self
+    from typing import Self
 
 
 class _JupyQTShell(InteractiveShell):

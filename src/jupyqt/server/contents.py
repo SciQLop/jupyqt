@@ -100,7 +100,7 @@ class NotebookHooks:
         for hook in self._save_hooks:
             try:
                 notebook = hook(path, notebook)
-            except Exception:  # noqa: PERF203 -- one broken hook must not skip the others
+            except Exception:
                 logger.exception("Notebook save hook failed", path=path)
         return notebook
 
@@ -113,7 +113,7 @@ class NotebookHooks:
         for hook in self._open_hooks:
             try:
                 hook(path, notebook)
-            except Exception:  # noqa: PERF203 -- one broken hook must not skip the others
+            except Exception:
                 logger.exception("Notebook open hook failed", path=path)
 
 
