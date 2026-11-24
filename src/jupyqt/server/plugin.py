@@ -17,7 +17,7 @@ from jupyqt.kernel.messages import deserialize_message, feed_identities
 from jupyqt.kernel.protocol import KernelProtocol
 
 if TYPE_CHECKING:
-    from anyio.abc import TaskStatus
+    from anyio.abc import TaskGroup, TaskStatus
     from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
     from IPython.core.interactiveshell import InteractiveShell
 
@@ -53,7 +53,7 @@ class JupyQtKernel:
         self._kernel_thread = kernel_thread
         self.key = "0"
         self._protocol = KernelProtocol(shell, key=self.key, kernel_thread=kernel_thread)
-        self._task_group: anyio.abc.TaskGroup | None = None  # ty: ignore[unresolved-attribute]
+        self._task_group: TaskGroup | None = None
 
         self._to_shell_send, self._to_shell_recv = anyio.create_memory_object_stream[list[bytes]]()
         self._from_shell_send, self._from_shell_recv = anyio.create_memory_object_stream[list[bytes]]()
@@ -157,7 +157,7 @@ def create_jupyqt_kernel_class(
             super().__init__()
             self._protocol = KernelProtocol(shell, key=self.key, kernel_thread=kernel_thread)
             self._kernel_thread = kernel_thread
-            self._tg: anyio.abc.TaskGroup | None = None  # ty: ignore[unresolved-attribute]
+            self._tg: TaskGroup | None = None
 
         async def start(self, *, task_status: TaskStatus[None] = anyio.TASK_STATUS_IGNORED) -> None:
             """Start channel dispatch loops and signal task_status when ready."""

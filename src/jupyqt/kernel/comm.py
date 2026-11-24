@@ -222,7 +222,7 @@ def create_comm(**kwargs: Any) -> Comm:
 def install() -> None:
     """Monkey-patch the ``comm`` package to use jupyqt's implementation."""
     try:
-        import comm  # noqa: PLC0415  # ty: ignore[unresolved-import]
+        import comm  # noqa: PLC0415  # ty: ignore[import-not-found]
 
         comm.create_comm = create_comm
         comm.get_comm_manager = get_comm_manager

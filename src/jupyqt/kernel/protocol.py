@@ -18,6 +18,7 @@ import traceback
 from typing import TYPE_CHECKING, Any
 
 import anyio
+import anyio.to_thread
 from IPython.core.completer import provisionalcompleter
 
 from jupyqt.kernel.comm import CommManager, get_comm_manager, set_current_parent, set_publish_fn
@@ -35,6 +36,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
+    from IPython.core.formatters import DisplayFormatter
     from IPython.core.interactiveshell import InteractiveShell
 
     from jupyqt.kernel.thread import KernelThread
@@ -189,6 +191,13 @@ class KernelProtocol:
         msg = create_message("status", parent=parent, content={"execution_state": status})
         await self._iopub_send.send(serialize_message(msg, self._key))
 
+    def _display_formatter(self) -> DisplayFormatter:
+        """The shell's formatter; IPython types it Optional but always sets it on init."""
+        formatter = self._shell.display_formatter
+        if formatter is None:
+            raise RuntimeError("the IPython shell has no display formatter")
+        return formatter
+
     async def _publish_stream(self, name: str, text: str, parent: dict[str, Any]) -> None:
         msg = create_message("stream", parent=parent, content={"name": name, "text": text})
         await self._iopub_send.send(serialize_message(msg, self._key))
@@ -299,9 +308,10 @@ class KernelProtocol:
                 self._shell.showtraceback = original_showtraceback  # ty: ignore[invalid-assignment]
                 builtins.input = original_input
 
-        if self._kernel_thread is not None:
-            result = await anyio.to_thread.run_sync(  # ty: ignore[unresolved-attribute]
-                lambda: self._kernel_thread.run_coroutine(_execute_async()),  # ty: ignore[unresolved-attribute]
+        kernel_thread = self._kernel_thread
+        if kernel_thread is not None:
+            result = await anyio.to_thread.run_sync(
+                lambda: kernel_thread.run_coroutine(_execute_async()),
             )
         else:
             result = _execute_sync()
@@ -324,7 +334,7 @@ class KernelProtocol:
             await self._iopub_send.send(serialize_message(display_msg, self._key))
 
         if result.result is not None and not silent:
-            format_dict, md_dict = self._shell.display_formatter.format(result.result)  # ty: ignore[unresolved-attribute]
+            format_dict, md_dict = self._display_formatter().format(result.result)
             exec_result_msg = create_message(
                 "execute_result",
                 parent=msg,
@@ -379,12 +389,11 @@ class KernelProtocol:
         cell would otherwise make ``run_sync`` time out and raise, crashing the
         dispatch loop; instead we degrade to ``default`` (e.g. no completions).
         """
-        if self._kernel_thread is not None:
+        kernel_thread = self._kernel_thread
+        if kernel_thread is not None:
             try:
-                return await anyio.to_thread.run_sync(  # ty: ignore[unresolved-attribute]
-                    lambda: self._kernel_thread.run_sync(  # ty: ignore[unresolved-attribute]
-                        func, *args, timeout=self._control_timeout,
-                    ),
+                return await anyio.to_thread.run_sync(
+                    lambda: kernel_thread.run_sync(func, *args, timeout=self._control_timeout),
                 )
             # concurrent.futures.TimeoutError is a distinct class on 3.10 but
             # an alias of builtin TimeoutError from 3.11 on; catch both so a

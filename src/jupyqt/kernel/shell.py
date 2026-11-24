@@ -38,7 +38,7 @@ def _activate_matplotlib_inline(shell: InteractiveShell) -> None:
     stops the hook from closing figures and rendering them inline.
     """
     try:
-        import matplotlib as mpl  # noqa: PLC0415  # ty: ignore[unresolved-import]
+        import matplotlib as mpl  # noqa: PLC0415  # ty: ignore[import-not-found]
 
         mpl.use("module://matplotlib_inline.backend_inline")
         from matplotlib_inline.backend_inline import configure_inline_support, flush_figures  # noqa: PLC0415

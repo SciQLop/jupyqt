@@ -10,11 +10,11 @@ from __future__ import annotations
 import base64
 import json
 import os
-from contextlib import asynccontextmanager
 from typing import cast
 
 import anyio
 import pytest
+from anyioutils import ResourceLock
 from fps_contents.routes import _Contents
 from jupyverse_contents.models import SaveContent
 from starlette.responses import FileResponse
@@ -22,19 +22,11 @@ from starlette.responses import FileResponse
 from jupyqt.server.contents import _JupyQtContents
 
 
-@asynccontextmanager
-async def _noop_lock(_path: str):
-    yield
-
-
 class _FakeContents(_JupyQtContents):
-    """_JupyQtContents with no-op file lock and no FastAPI router setup."""
+    """_JupyQtContents without the FastAPI router setup."""
 
     def __init__(self) -> None:
-        pass
-
-    def file_lock(self, path: str):  # ty: ignore[invalid-method-override]
-        return _noop_lock(path)
+        self.file_lock = ResourceLock()
 
 
 _BINARY = b"col_a,col_b\n1,2\nbinary:\x00\x01\xfe\xff"
