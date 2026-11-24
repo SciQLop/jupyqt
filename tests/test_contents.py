@@ -11,6 +11,7 @@ import base64
 import json
 import os
 from contextlib import asynccontextmanager
+from typing import cast
 
 import anyio
 import pytest
@@ -334,3 +335,48 @@ def test_failing_open_hook_still_returns_content(tmp_path, monkeypatch, notebook
     model = anyio.run(_JupyQtContents.get_content, _FakeContents(), "nb.ipynb", 1)
 
     assert model.type == "notebook"
+
+
+# JupyterLab asks for images and PDFs with `?format=base64`, but the upstream
+# GET route has no `format` parameter, so the server must pick the format itself.
+_PNG = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
+_SVG = '<svg xmlns="http://www.w3.org/2000/svg"/>'
+
+
+def test_upstream_fps_contents_cannot_read_binary_file(tmp_path, monkeypatch):
+    from fastapi import HTTPException
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "plot.png").write_bytes(_PNG)
+
+    with pytest.raises(HTTPException):
+        anyio.run(_Contents.get_content, _FakeContents(), "plot.png", 1, None)
+
+
+def test_binary_file_is_served_as_base64_with_its_mimetype(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "plot.png").write_bytes(_PNG)
+
+    model = anyio.run(_JupyQtContents.get_content, _FakeContents(), "plot.png", 1)
+
+    assert (model.format, model.mimetype) == ("base64", "image/png")
+    assert base64.b64decode(cast("str", model.content)) == _PNG
+
+
+def test_svg_is_served_as_text_with_image_mimetype(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "plot.svg").write_text(_SVG)
+
+    model = anyio.run(_JupyQtContents.get_content, _FakeContents(), "plot.svg", 1)
+
+    assert (model.format, model.mimetype, model.content) == ("text", "image/svg+xml", _SVG)
+
+
+@pytest.mark.parametrize(("name", "mimetype"), [("data.csv", "text/csv"), ("notes.txt", "text/plain")])
+def test_text_file_is_served_as_text(tmp_path, monkeypatch, name, mimetype):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / name).write_text("a,b\n1,2\n")
+
+    model = anyio.run(_JupyQtContents.get_content, _FakeContents(), name, 1)
+
+    assert (model.format, model.mimetype, model.content) == ("text", mimetype, "a,b\n1,2\n")

@@ -1,6 +1,6 @@
 """Jupyverse Contents plugin that fills gaps in the upstream implementation.
 
-Four upstream gaps are patched here:
+Five upstream gaps are patched here:
 
 1. `_Contents.write_content` writes the base64-encoded string to disk in the
    `format:"base64"` branch instead of decoding it first, so any binary file
@@ -22,7 +22,12 @@ Four upstream gaps are patched here:
    overwrites the file instead of appending, leaving only the last chunk
    on disk.
 
-This module provides a subclass that fixes all four, plus a jupyverse
+5. The `GET /api/contents/{path}` route drops the `format` query parameter,
+   so any file that is not UTF-8 (PNG, PDF...) fails to decode and returns
+   404, and every file is labelled `text/plain`. JupyterLab's image and PDF
+   viewers then cannot open anything.
+
+This module provides a subclass that fixes all five, plus a jupyverse
 Module that registers it in place of the default fps-contents ContentsModule.
 
 It also runs the host application's notebook hooks (`NOTEBOOK_HOOKS`) when a
@@ -34,6 +39,7 @@ from __future__ import annotations
 
 import base64
 import json
+import mimetypes
 import shutil
 from typing import TYPE_CHECKING, Any, cast
 
@@ -154,10 +160,13 @@ class _JupyQtContents(_Contents):
         self,
         path: str,
         content: int,
-        user: User | None = None,
+        user: User | None = None,  # noqa: ARG002
     ) -> Content:
-        """Read content, running the notebook open hooks when a notebook is opened."""
-        model = await super().get_content(path, content, user)
+        """Read content with a real format and mimetype, running notebook open hooks."""
+        file_format = await _sniff_format(path) if content else None
+        model = await self.read_content(path, bool(content), file_format)
+        if model.type == "file":
+            model = _with_file_format(model, file_format)
         if content and model.type == "notebook":
             absolute = str(await Path(path.lstrip("/")).absolute())
             NOTEBOOK_HOOKS.on_open(absolute, cast("dict | str", model.content))
@@ -232,6 +241,33 @@ class _JupyQtContents(_Contents):
                     return
                 content.content = cast("str", content.content)
                 await Path(content.path).write_text(content.content)
+
+
+async def _sniff_format(path: str) -> str | None:
+    """Return "base64" for a file that is not UTF-8 text, None to keep upstream's text read.
+
+    simplify: the upstream GET route drops JupyterLab's `?format=` query, so the
+    format is guessed from the bytes, as jupyter_server does when none is given.
+    A pure-ASCII binary (rare) is served as text. Honor `format` once the
+    upstream route forwards it.
+    """
+    p = Path(path.lstrip("/"))
+    if not await p.is_file():
+        return None
+    try:
+        (await p.read_bytes()).decode()
+    except UnicodeDecodeError:
+        return "base64"
+    return None
+
+
+def _with_file_format(model: Content, file_format: str | None) -> Content:
+    """Fill the format and mimetype that upstream leaves as None and text/plain."""
+    mimetype = mimetypes.guess_type(model.name)[0]
+    if file_format == "base64":
+        return model.model_copy(update={"format": "base64", "mimetype": mimetype or "application/octet-stream"})
+    text_format = "text" if model.content is not None else None
+    return model.model_copy(update={"format": text_format, "mimetype": mimetype or "text/plain"})
 
 
 class JupyQtContentsModule(Module):
