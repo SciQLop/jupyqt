@@ -383,7 +383,9 @@ def _write_notebook(path, metadata: dict) -> None:
 def _served_metadata(name: str) -> dict:
     model = anyio.run(_JupyQtContents.get_content, _FakeContents(), name, 1)
     content = model.content
-    return (json.loads(content) if isinstance(content, str) else content)["metadata"]
+    notebook = json.loads(content) if isinstance(content, str) else content
+    assert isinstance(notebook, dict)
+    return notebook["metadata"]
 
 
 _JULIA = {"kernelspec": {"name": "julia-1.10", "display_name": "Julia 1.10", "language": "julia"},
