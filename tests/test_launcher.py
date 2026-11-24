@@ -6,29 +6,7 @@ import time
 import urllib.error
 import urllib.request
 
-from jupyqt.server.launcher import ServerLauncher, _ensure_kernelspec
-
-
-def test_ensure_kernelspec_creates_kernel_json(tmp_path, monkeypatch):
-    monkeypatch.setattr("jupyqt.server.launcher.sys", type("sys", (), {"prefix": str(tmp_path), "executable": "/usr/bin/python3"})())
-    _ensure_kernelspec()
-    kernel_json = tmp_path / "share" / "jupyter" / "kernels" / "python3" / "kernel.json"
-    assert kernel_json.exists()
-    spec = json.loads(kernel_json.read_text())
-    assert spec["language"] == "python"
-    assert spec["display_name"] == "Python 3 (jupyqt)"
-    assert spec["argv"][0] == "/usr/bin/python3"
-
-
-def test_ensure_kernelspec_does_not_overwrite(tmp_path, monkeypatch):
-    monkeypatch.setattr("jupyqt.server.launcher.sys", type("sys", (), {"prefix": str(tmp_path), "executable": "python3"})())
-    kernel_dir = tmp_path / "share" / "jupyter" / "kernels" / "python3"
-    kernel_dir.mkdir(parents=True)
-    existing = {"display_name": "Custom", "language": "python", "argv": ["custom"]}
-    (kernel_dir / "kernel.json").write_text(json.dumps(existing))
-    _ensure_kernelspec()
-    spec = json.loads((kernel_dir / "kernel.json").read_text())
-    assert spec["display_name"] == "Custom"
+from jupyqt.server.launcher import ServerLauncher
 
 
 def test_server_starts_and_provides_url(shell, tmp_path):

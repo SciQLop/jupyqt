@@ -380,3 +380,58 @@ def test_text_file_is_served_as_text(tmp_path, monkeypatch, name, mimetype):
     model = anyio.run(_JupyQtContents.get_content, _FakeContents(), name, 1)
 
     assert (model.format, model.mimetype, model.content) == ("text", mimetype, "a,b\n1,2\n")
+
+
+# jupyqt has a single kernel. A notebook naming another one (or none) would make
+# Lab ask which kernel to start, so it is served as a jupyqt-kernel notebook.
+def _write_notebook(path, metadata: dict) -> None:
+    path.write_text(json.dumps({**_NOTEBOOK, "metadata": metadata}))
+
+
+def _served_metadata(name: str) -> dict:
+    model = anyio.run(_JupyQtContents.get_content, _FakeContents(), name, 1)
+    content = model.content
+    return (json.loads(content) if isinstance(content, str) else content)["metadata"]
+
+
+_JULIA = {"kernelspec": {"name": "julia-1.10", "display_name": "Julia 1.10", "language": "julia"},
+          "language_info": {"name": "julia"}}
+
+
+def test_notebook_for_a_foreign_kernel_is_served_with_the_jupyqt_kernel(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    _write_notebook(tmp_path / "nb.ipynb", _JULIA)
+
+    kernelspec = _served_metadata("nb.ipynb")["kernelspec"]
+
+    assert (kernelspec["name"], kernelspec["language"]) == ("python3", "python")
+
+
+def test_notebook_without_kernel_is_served_with_the_jupyqt_kernel(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    _write_notebook(tmp_path / "nb.ipynb", {})
+
+    assert _served_metadata("nb.ipynb")["kernelspec"]["name"] == "python3"
+
+
+def test_python3_notebook_keeps_its_kernelspec(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    ipykernel = {"name": "python3", "display_name": "Python 3 (ipykernel)", "language": "python"}
+    _write_notebook(tmp_path / "nb.ipynb", {"kernelspec": ipykernel})
+
+    assert _served_metadata("nb.ipynb")["kernelspec"] == ipykernel
+
+
+def test_serving_a_foreign_kernel_notebook_leaves_the_file_and_open_hooks_untouched(
+    tmp_path, monkeypatch, notebook_hooks,
+):
+    monkeypatch.chdir(tmp_path)
+    _write_notebook(tmp_path / "nb.ipynb", _JULIA)
+    on_disk = (tmp_path / "nb.ipynb").read_text()
+    seen = []
+    notebook_hooks.add_open_hook(lambda _path, nb: seen.append(nb["metadata"]["kernelspec"]["name"]))
+
+    _served_metadata("nb.ipynb")
+
+    assert (tmp_path / "nb.ipynb").read_text() == on_disk
+    assert seen == ["julia-1.10"]
