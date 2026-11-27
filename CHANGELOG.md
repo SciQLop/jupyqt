@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.7.1](https://github.com/jeandet/jupyqt/releases/tag/0.7.1) - 2026-11-27
+
+<small>[Compare with 0.7.0](https://github.com/jeandet/jupyqt/compare/0.7.0...0.7.1)</small>
+
+### Bug Fixes
+
+- show PDFs instead of a blank white page ([b17fc7b](https://github.com/jeandet/jupyqt/commit/b17fc7b996d4f0f3dbb8ac7881b898f6061df86b) by Alexis Jeandet). Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
 ## [0.7.0](https://github.com/jeandet/jupyqt/releases/tag/0.7.0) - 2026-11-24
 
 <small>[Compare with 0.6.6](https://github.com/jeandet/jupyqt/compare/0.6.6...0.7.0)</small>
