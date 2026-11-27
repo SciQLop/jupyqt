@@ -14,13 +14,14 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PySide6.QtWebEngineCore import QWebEnginePage
+from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
 
 from jupyqt.qt.widget import (
     BOOT_TIMEOUT_S,
     GIVE_UP_S,
     JupyterLabWidget,
     _LabPage,
+    enable_embedded_pdf,
     watchdog_action,
 )
 
@@ -66,3 +67,13 @@ def test_download_requested_cancels_on_dialog_cancel():
 
     download.cancel.assert_called_once()
     download.accept.assert_not_called()
+
+
+def test_lab_pages_enable_the_pdf_viewer_plugin():
+    """Lab shows a PDF in ``<object type="application/pdf">``; QtWebEngine leaves it
+    blank unless Pepper plugins are on, even though ``PdfViewerEnabled`` is."""
+    settings = MagicMock()
+
+    enable_embedded_pdf(settings)
+
+    settings.setAttribute.assert_called_once_with(QWebEngineSettings.WebAttribute.PluginsEnabled, True)  # noqa: FBT003 -- Qt API
