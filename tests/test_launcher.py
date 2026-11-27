@@ -105,12 +105,13 @@ def _slow_download(port: int, path: str) -> bytes:
 
 
 def test_large_file_reaches_a_slow_client_whole(shell, tmp_path):
-    """Regression: anycorn's zero-copy send cut files short once the socket was full.
+    """Regression: files anycorn sent itself (ASGI pathsend) arrived cut short.
 
-    On asyncio, os.sendfile hitting EAGAIN made anycorn call add_writer on a socket
-    its transport owns, which raises; Lab's JS chunks failed to load on macOS.
+    - On asyncio, os.sendfile hitting EAGAIN made anycorn call add_writer on a socket
+      its transport owns, which raises; Lab's JS chunks failed to load on macOS.
+    - On Windows, anycorn opens the file in text mode, so a 0x1A byte ends it.
     """
-    payload = os.urandom(8 * 1024 * 1024)
+    payload = b"\x1a" + os.urandom(8 * 1024 * 1024)
     (tmp_path / "big.bin").write_bytes(payload)
     launcher = ServerLauncher(shell, port=0, cwd=str(tmp_path))
     launcher.start()
