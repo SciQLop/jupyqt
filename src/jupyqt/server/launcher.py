@@ -67,21 +67,6 @@ def _build_config(port: int) -> dict[str, Any]:
     }
 
 
-def _disable_zero_copy_send() -> None:
-    """Make anycorn send file bodies through the stream instead of os.sendfile.
-
-    On asyncio, anycorn's sendfile waits on EAGAIN with add_writer on a socket its
-    transport owns, which raises and truncates the response (Lab chunks fail to load,
-    seen on macOS). https://github.com/davidbrochart/anycorn/issues/95
-    anycorn has no setting for this; with have_sendfile false it takes its TLS path,
-    which reads the file and sends it through the stream. Zero-copy buys nothing
-    for a localhost browser.
-    """
-    import anycorn.tcp_server  # noqa: PLC0415
-
-    anycorn.tcp_server.have_sendfile = False
-
-
 def _hand_shell_to_kernel_module(shell: InteractiveShell, kernel_thread: KernelThread | None) -> None:
     """Give the in-process kernel module the shell it runs cells in."""
     from jupyqt.server.plugin import JupyQtKernelModule  # noqa: PLC0415
@@ -169,7 +154,6 @@ class ServerLauncher:
                 os.chdir(self._cwd)
 
             _hand_shell_to_kernel_module(self._shell, self._kernel_thread)
-            _disable_zero_copy_send()
 
             from jupyqt.server.kernelspec import remove_old_jupyqt_kernelspecs  # noqa: PLC0415
 
