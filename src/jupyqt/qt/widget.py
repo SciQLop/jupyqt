@@ -21,6 +21,10 @@ WATCHDOG_INTERVAL_MS = 1000
 # busier, so leave a slow boot room before calling it stuck.
 BOOT_TIMEOUT_S = 15.0
 GIVE_UP_S = 120.0
+# A renderer that dies again right after each reload is not coming back: stop
+# reloading after MAX_CRASHES crashes within CRASH_WINDOW_S.
+MAX_CRASHES = 3
+CRASH_WINDOW_S = 60.0
 _LAB_BOOTED_JS = "!!document.querySelector('.jp-LabShell')"
 
 
@@ -63,6 +67,11 @@ def watchdog_action(*, booted: bool, load_failed: bool, attempt_age: float, tota
     if load_failed or attempt_age > BOOT_TIMEOUT_S:
         return "reload"
     return "wait"
+
+
+def recent_crashes(crash_times: list[float], now: float) -> list[float]:
+    """The renderer crash times that still count towards the crash loop guard."""
+    return [t for t in crash_times if now - t < CRASH_WINDOW_S]
 
 
 class _PopupPage(QWebEnginePage):
@@ -112,6 +121,7 @@ class JupyterLabWidget(QStackedWidget):
         self._web_view.setPage(_LabPage(self._web_view))
         enable_embedded_pdf(self._web_view.settings())
         self._web_view.loadFinished.connect(self._on_load_finished)
+        self._web_view.page().renderProcessTerminated.connect(self._on_render_process_terminated)
         QWebEngineProfile.defaultProfile().downloadRequested.connect(
             self._on_download_requested,
         )
@@ -125,6 +135,7 @@ class JupyterLabWidget(QStackedWidget):
         self._first_load_at = 0.0
         self._attempt_at = 0.0
         self._load_failed = False
+        self._crash_times: list[float] = []
 
     def load(self, url: str) -> None:
         """Navigate the embedded browser to the given URL.
@@ -171,6 +182,25 @@ class JupyterLabWidget(QStackedWidget):
         if action == "reload":
             log.info("JupyterLab did not start, loading it again")
             self._navigate(self._url)
+
+    def _on_render_process_terminated(
+        self,
+        status: QWebEnginePage.RenderProcessTerminationStatus,
+        exit_code: int,
+    ) -> None:
+        """Reload Lab when its render process dies, unless it keeps dying.
+
+        https://doc.qt.io/qt-6/qwebenginepage.html#renderProcessTerminated
+        """
+        if self._url is None or status == QWebEnginePage.RenderProcessTerminationStatus.NormalTerminationStatus:
+            return
+        now = time.monotonic()
+        self._crash_times = [*recent_crashes(self._crash_times, now), now]
+        if len(self._crash_times) > MAX_CRASHES:
+            log.warning("JupyterLab's renderer keeps dying (%s, exit code %d), giving up on reloading it", status.name, exit_code)
+            return
+        log.warning("JupyterLab's renderer died (%s, exit code %d), loading it again", status.name, exit_code)
+        self.load(self._url)
 
     def is_on(self, url_prefix: str) -> bool:
         """Whether the page currently shown starts with url_prefix.

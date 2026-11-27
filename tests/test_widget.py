@@ -18,12 +18,19 @@ from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
 
 from jupyqt.qt.widget import (
     BOOT_TIMEOUT_S,
+    CRASH_WINDOW_S,
     GIVE_UP_S,
+    MAX_CRASHES,
     JupyterLabWidget,
     _LabPage,
     enable_embedded_pdf,
+    recent_crashes,
     watchdog_action,
 )
+
+Status = QWebEnginePage.RenderProcessTerminationStatus
+LAB = "http://127.0.0.1:1/lab?token=t"
+
 
 
 @pytest.mark.parametrize(
@@ -77,3 +84,42 @@ def test_lab_pages_enable_the_pdf_viewer_plugin():
     enable_embedded_pdf(settings)
 
     settings.setAttribute.assert_called_once_with(QWebEngineSettings.WebAttribute.PluginsEnabled, True)  # noqa: FBT003 -- Qt API
+
+
+@pytest.fixture
+def lab_widget(qtbot):
+    """A widget that believes it shows LAB, with load() recorded instead of run."""
+    widget = JupyterLabWidget()
+    qtbot.addWidget(widget)
+    widget._url = LAB
+    widget.load = MagicMock()
+    return widget
+
+
+def _kill_renderer(widget, status=Status.CrashedTerminationStatus):
+    widget._web_view.page().renderProcessTerminated.emit(status, 11)
+
+
+def test_crashed_renderer_reloads_lab(lab_widget):
+    """Without --single-process a renderer crash only kills the page; Lab must come back."""
+    _kill_renderer(lab_widget)
+
+    lab_widget.load.assert_called_once_with(LAB)
+
+
+def test_normal_renderer_exit_does_not_reload(lab_widget):
+    _kill_renderer(lab_widget, Status.NormalTerminationStatus)
+
+    lab_widget.load.assert_not_called()
+
+
+def test_crash_loop_gives_up(lab_widget):
+    for _ in range(MAX_CRASHES + 2):
+        _kill_renderer(lab_widget)
+
+    assert lab_widget.load.call_count == MAX_CRASHES
+
+
+def test_old_crashes_are_forgotten():
+    now = 1000.0
+    assert recent_crashes([now - CRASH_WINDOW_S - 1, now - 1], now) == [now - 1]
