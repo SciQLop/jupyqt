@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [0.7.2](https://github.com/jeandet/jupyqt/releases/tag/0.7.2) - 2026-11-27
+
+<small>[Compare with 0.7.1](https://github.com/jeandet/jupyqt/compare/0.7.1...0.7.2)</small>
+
+### Bug Fixes
+
+- let Starlette send Lab's files, not anycorn ([7b3d9f0](https://github.com/jeandet/jupyqt/commit/7b3d9f0cc9075971484b270a1cd22c282d95502f) by Alexis Jeandet). Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- reload Lab when its renderer process dies ([705ef7a](https://github.com/jeandet/jupyqt/commit/705ef7a0ba1523ddcf0f1e146a8cdb98db36de21) by Alexis Jeandet). Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- serve Lab's files whole when the socket fills up ([e1712df](https://github.com/jeandet/jupyqt/commit/e1712dfb14165ad67193f0ff8ace30c7bebe9f8c) by Alexis Jeandet). Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
 ## [0.7.1](https://github.com/jeandet/jupyqt/releases/tag/0.7.1) - 2026-11-27
 
 <small>[Compare with 0.7.0](https://github.com/jeandet/jupyqt/compare/0.7.0...0.7.1)</small>
