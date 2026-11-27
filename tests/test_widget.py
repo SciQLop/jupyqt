@@ -14,7 +14,9 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
+from PySide6.QtCore import SIGNAL
 from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
+from PySide6.QtWebEngineWidgets import QWebEngineView
 
 from jupyqt.qt.widget import (
     BOOT_TIMEOUT_S,
@@ -30,7 +32,6 @@ from jupyqt.qt.widget import (
 
 Status = QWebEnginePage.RenderProcessTerminationStatus
 LAB = "http://127.0.0.1:1/lab?token=t"
-
 
 
 @pytest.mark.parametrize(
@@ -97,7 +98,19 @@ def lab_widget(qtbot):
 
 
 def _kill_renderer(widget, status=Status.CrashedTerminationStatus):
-    widget._web_view.page().renderProcessTerminated.emit(status, 11)
+    # Called directly: PySide6 6.8 can't emit this signal from Python (its enum
+    # isn't a registered meta type); the C++ emission works there.
+    widget._on_render_process_terminated(status, 11)
+
+
+def _crash_receivers(page) -> int:
+    return page.receivers(SIGNAL("renderProcessTerminated(QWebEnginePage::RenderProcessTerminationStatus,int)"))
+
+
+def test_lab_page_reports_renderer_crashes_to_the_widget(lab_widget):
+    plain = QWebEngineView()
+
+    assert _crash_receivers(lab_widget._web_view.page()) == _crash_receivers(plain.page()) + 1
 
 
 def test_crashed_renderer_reloads_lab(lab_widget):
