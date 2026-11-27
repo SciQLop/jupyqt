@@ -10,7 +10,7 @@ from urllib.parse import quote, urlsplit, urlunsplit
 
 from PySide6.QtCore import Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile
+from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile, QWebEngineSettings
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QFileDialog, QLabel, QStackedWidget, QWidget
 
@@ -42,6 +42,16 @@ def _open_file_js(path: str) -> str:
         f" app.restored.then(() => app.commands.execute('docmanager:open', {{path: {json.dumps(path)}}}));"
         " return true; })()"
     )
+
+
+def enable_embedded_pdf(settings: QWebEngineSettings) -> None:
+    """Let Chromium's PDF viewer draw PDFs embedded in a page.
+
+    Lab shows a PDF in an ``<object type="application/pdf">``. ``PdfViewerEnabled``
+    (on by default) only covers navigating to a PDF; an embedded one stays a blank
+    white page unless ``PluginsEnabled`` is on too.
+    """
+    settings.setAttribute(QWebEngineSettings.WebAttribute.PluginsEnabled, True)  # noqa: FBT003 -- Qt API
 
 
 def watchdog_action(*, booted: bool, load_failed: bool, attempt_age: float, total_age: float) -> str:
@@ -100,6 +110,7 @@ class JupyterLabWidget(QStackedWidget):
 
         self._web_view = QWebEngineView(self)
         self._web_view.setPage(_LabPage(self._web_view))
+        enable_embedded_pdf(self._web_view.settings())
         self._web_view.loadFinished.connect(self._on_load_finished)
         QWebEngineProfile.defaultProfile().downloadRequested.connect(
             self._on_download_requested,
